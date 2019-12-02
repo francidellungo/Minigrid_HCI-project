@@ -72,9 +72,20 @@ class RewardNet(nn.Module):
             for t, trajectory in enumerate(X):
                 trajectory_score = self(trajectory).sum().exp()
                 test_scores.append(trajectory_score)
-    
+
+            quality = 0
+
             for i in range(len(test_scores)):
                 for j in range(len(test_scores)):
                     if i == j:
                         continue
                     print("i: " + str(i) + ", j: " + str(j) + ", P(J(τj) > J(τi)): " + str(test_scores[j] / (test_scores[i] + test_scores[j])))
+
+                    if j > i and test_scores[j] > test_scores[i]:
+                            quality += 1
+
+            n = len(test_scores)
+            quality /= n * (n-1) / 2
+            print("quality:", quality)
+            # quality is the percentage of correctly discriminated pairs
+
