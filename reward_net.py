@@ -21,13 +21,17 @@ class RewardNet(nn.Module):
     @staticmethod
     def loss(scores):
         n = len(scores)
-        scores = scores + 10 ** -3
+
+        scores += 10 ** -7  # to avoid 0/0 when calculating predictions
 
         predictions = []
         for i in range(n - 1):
+            assert scores[i] >= 0
             for j in range(i + 1, n):
+                assert scores[j] >= 0
                 predictions.append((scores[j]) / (scores[i] + scores[j]))  # T-REX loss
-        l = -sum([p.log() for p in predictions])
+
+        l = -sum([p.clamp(min=10**-8, max=1).log() for p in predictions])  # clamp to avoid log(0)
         return l
     
     def __init__(self, input_shape):
