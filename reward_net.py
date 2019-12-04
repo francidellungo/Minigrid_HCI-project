@@ -3,20 +3,11 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
 
+from utils import conv_output_size
+
 
 class RewardNet(nn.Module):
     """ this is a simple neural network """
-
-    @staticmethod
-    def calculateOutputSize(input_dim, filter_dim, padding=0, stride=1):
-        # formula for output dimension:
-        # O = (D -K +2P)/S + 1
-        # where:
-        #   D = input dim (height/length)
-        #   K = filter size
-        #   P = padding
-        #   S = stride
-        return (input_dim - filter_dim + 2*padding) // stride + 1
     
     @staticmethod
     def loss(scores):
@@ -36,22 +27,17 @@ class RewardNet(nn.Module):
     
     def __init__(self, input_shape):
         super(RewardNet, self).__init__()
-        assert input_shape[1] == input_shape[2]
+        self.input_shape = input_shape
 
         self.conv = nn.Conv2d(in_channels=1, out_channels=15, kernel_size=2)
-        o = RewardNet.calculateOutputSize(input_shape[1], 2, 0, 1)
+        o = conv_output_size(input_shape[1], 2, 0, 1)
         self.fc = nn.Linear(15 * o * o, 1)
-        #self.optimizer = optim.Adadelta(self.parameters(), lr=1e-4)
-        #self.optimizer = optim.Adamax(self.parameters(), lr=1e-4)
-        #self.optimizer = optim.RMSprop(self.parameters(), lr=1e-4)
         self.optimizer = optim.Adam(self.parameters(), lr=1e-3)
-        #self.optimizer = optim.ASGD(self.parameters(), lr=1e-4)
-        #self.optimizer = optim.Rprop(self.parameters(), lr=1e-4)
-        #self.optimizer = optim.SGD(self.parameters(), lr=1e-4)
 
     def forward(self, x):
-        b = x.shape[0]
-        return self.fc(F.relu(self.conv(x)).view(b, -1))
+        x = x.view(-1, *self.input_shape)
+        batch_size = len(x)
+        return self.fc(F.relu(self.conv(x)).view(batch_size, -1))
 
     def fit(self, X_train, max_epochs=1000):
         # TRAINING
@@ -92,4 +78,3 @@ class RewardNet(nn.Module):
             quality /= n * (n-1) / 2
             print("quality:", quality)
             # quality is the percentage of correctly discriminated pairs
-

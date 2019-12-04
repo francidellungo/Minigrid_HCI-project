@@ -114,16 +114,19 @@ if __name__ == "__main__":
     X_train = torch.randn((20, 8, 7, 7)).reshape(20, -1, *input_shape).to(device)
     X_test = X_train[:10] + torch.randn(X_train[:10].shape).to(device) / 10
 
-    net = RewardNet(input_shape).to(device)
+    reward_net = RewardNet(input_shape).to(device)
 
     print("summary")
-    print(summary(net, input_shape, device=device))
+    print(summary(reward_net, input_shape, device=device))
 
     # evaluate before training
-    net.evaluate(X_test)
+    reward_net.evaluate(X_test)
 
     # training
-    net.fit(X_train)
+    reward_net.fit(X_train, max_epochs=300)
 
     # evaluate after training
-    net.evaluate(X_test)
+    reward_net.evaluate(X_test)
+
+    # save trained reward net
+    torch.save(reward_net.state_dict(), "reward_net.pth") # TODO specificare file output da argomenti
