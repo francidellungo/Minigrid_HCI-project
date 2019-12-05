@@ -10,10 +10,6 @@ from utils import conv_output_size
 class PolicyNet(nn.Module):
 
     @staticmethod
-    def state_filter(state):
-        return torch.from_numpy(state['image'][:, :, 0]).float()
-
-    @staticmethod
     def compute_discounted_rewards(rewards, gamma=0.99):
         discounted_rewards = []
         running = 0.0
@@ -48,7 +44,7 @@ class PolicyNet(nn.Module):
         for episode in range(episodes):
             self.env.render()
 
-            states, actions, discounted_rewards = self.run_episode(...)
+            states, actions, discounted_rewards = self.run_episode(max_length=100)
 
             self.optimizer.zero_grad()
             for state, action, discounted_reward in zip(states[:-1], actions, discounted_rewards):
@@ -58,6 +54,9 @@ class PolicyNet(nn.Module):
 
             self.optimizer.step()
 
+    def state_filter(self, state):
+        return torch.from_numpy(state['image'][:, :, 0]).float().to(self.fc.weight.device)
+
     def sample_action(self, state):
         actions_logits = self(state)
         distribution = Categorical(logits=actions_logits)
@@ -65,7 +64,7 @@ class PolicyNet(nn.Module):
         return action
 
     def run_episode(self, max_length, gamma=0.99):
-        state = PolicyNet.state_filter(self.env.reset())
+        state = self.state_filter(self.env.reset())
 
         states = [state]
         actions = []
@@ -75,8 +74,9 @@ class PolicyNet(nn.Module):
             action = self.sample_action(state)
 
             state, r, done, _ = self.env.step(action)
-            reward = self.reward(state)  # TODO controllare nel paper quale è il modo giusto di calcolare il reward
-            state = PolicyNet.state_filter(state)
+            state = self.state_filter(state)
+            with torch.no_grad():
+                reward = self.reward(state)  # TODO controllare nel paper quale è il modo giusto di calcolare il reward
             states.append(state)
             rewards.append(reward)
             actions.append(action)
