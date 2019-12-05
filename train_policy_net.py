@@ -15,6 +15,12 @@ if __name__ == "__main__":
     # use GPU if available, otherwise use CPU
     device = "cuda" if torch.cuda.is_available() else "cpu"
 
+    torch.manual_seed(0)  # for determinism, both on CPU and on GPU
+    if torch.cuda.is_available():
+        # required for determinism when using GPU
+        torch.backends.cudnn.deterministic = True
+        torch.backends.cudnn.benchmark = False
+
     # load trained reward net
     reward_net = RewardNet(input_shape)
     reward_net.load_state_dict(torch.load("reward_net.pth")) # TODO scegliere rete da argomenti
@@ -23,7 +29,7 @@ if __name__ == "__main__":
 
     policy_net = PolicyNet(input_shape, num_actions, env, reward_net).to(device)
 
-    policy_net.fit(episodes=1000)
+    policy_net.fit(episodes=10000)
 
     # save trained policy net
     torch.save(policy_net.state_dict(), "policy_net.pth")

@@ -11,7 +11,7 @@ from datetime import datetime
 
 import gym_minigrid
 
-games_path = './games/'
+games_path = 'games'
 
 game_name = None
 game_info = {
@@ -19,7 +19,8 @@ game_info = {
     'trajectory': [],
     'score': None
 }
-directory = None
+game_directory = None
+screenshots = []
 
 
 def state_filter(state):
@@ -37,7 +38,7 @@ def reset_env(env):
     :param env: gym environment used
     :return:
     """
-    global game_name, game_info, directory
+    global game_name, game_info, game_directory, screenshots
     env.reset()
     if hasattr(env, 'mission'):
         print('Mission: %s' % env.mission)
@@ -53,10 +54,8 @@ def reset_env(env):
         'score': None
     }
 
-    # Create new folder to save images
-    directory = games_path + str(game_name)
-    if not os.path.exists(directory):
-        os.makedirs(directory)
+    game_directory = os.path.join(games_path, options.env_name, str(game_name))
+    screenshots = []
 
 
 def act_action(env, action):
@@ -75,13 +74,23 @@ def act_action(env, action):
 
     print('step=%s, reward=%.2f' % (env.step_count, reward))
 
-    # Save image of each state
-    screen_path = games_path + str(game_name) + '/game' + str(env.step_count) + '.png'
+    # Save screenshots
+    screenshot_path = os.path.join(game_directory, 'game' + str(env.step_count) + '.png')
     pixmap = env.render('pixmap')
-    pixmap.save(screen_path)
+    screenshots.append((screenshot_path, pixmap))
 
     if done:
-        with open(games_path + str(game_name) + '.json', 'w+') as game_file:
+        # Save images and json
+
+        # Create new folder to save images and json
+        if not os.path.exists(game_directory):
+            os.makedirs(game_directory)
+
+        # Save image of each state
+        for screenshot_path, pixmap in screenshots:
+            pixmap.save(screenshot_path)
+
+        with open(os.path.join(game_directory, 'game.json'), 'w+') as game_file:
             json.dump(game_info, game_file, ensure_ascii=False)
 
         print('done!', len(game_info['trajectory']))
@@ -90,7 +99,7 @@ def act_action(env, action):
 
 def main():
 
-    global game_name, game_info
+    global game_name, game_info, options
     parser = OptionParser()
     parser.add_option(
         "-e",

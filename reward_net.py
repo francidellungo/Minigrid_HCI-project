@@ -33,6 +33,7 @@ class RewardNet(nn.Module):
         o = conv_output_size(input_shape[1], 2, 0, 1)
         self.fc = nn.Linear(15 * o * o, 1)
         self.optimizer = optim.Adam(self.parameters(), lr=1e-3)
+        # TODO regolarizzare
 
     def forward(self, x):
         x = x.view(-1, *self.input_shape)
@@ -40,7 +41,7 @@ class RewardNet(nn.Module):
         return self.fc(F.relu(self.conv(x)).view(batch_size, -1))
 
     def fit(self, X_train, max_epochs=1000):
-        # TRAINING
+        # training
         for epoch in range(max_epochs):
             self.optimizer.zero_grad()
             scores = torch.zeros(len(X_train))
@@ -50,13 +51,16 @@ class RewardNet(nn.Module):
 
             l = RewardNet.loss(scores)
             l.backward()
+            # TODO capire per quale motivo il gradiente e la loss a un certo punto esplodono
 
             self.optimizer.step()
 
             print("epoch:", epoch, " loss:", l.item())
 
     def evaluate(self, X):
-        # TEST BEFORE TRAINING
+        # net evaluation
+        training = self.training
+        self.eval()  # same as: self.training = False
         with torch.no_grad():
             test_scores = []
             for t, trajectory in enumerate(X):
@@ -78,3 +82,5 @@ class RewardNet(nn.Module):
             quality /= n * (n-1) / 2
             print("quality:", quality)
             # quality is the percentage of correctly discriminated pairs
+
+        self.training = training  # restore previous training state
