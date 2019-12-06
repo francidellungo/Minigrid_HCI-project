@@ -29,7 +29,7 @@ class PolicyNet(nn.Module):
         o = conv_output_size(input_shape[1], 2, 0, 1)
         self.fc = nn.Linear(15 * o * o, num_actions)
         self.input_shape = input_shape
-        self.optimizer = optim.Adam(self.parameters(), 10 ** -4)
+        self.optimizer = optim.Adam(self.parameters(), 10 ** -5)
         self.env = env
         self.reward = reward
 
@@ -51,6 +51,7 @@ class PolicyNet(nn.Module):
                 action_logits = self(state)
                 l += PolicyNet.loss(action_logits, action, discounted_reward)
 
+            l /= len(actions)
             l.backward()
             self.optimizer.step()
             # TODO controllare loss: va in su e giù, capire se il problema sta qui oppure nella rete che dà il reward

@@ -12,19 +12,14 @@ class RewardNet(nn.Module):
     @staticmethod
     def loss(scores):
         n = len(scores)
-
-        scores += 10 ** -7  # to avoid 0/0 when calculating predictions
-
         predictions = []
         for i in range(n - 1):
-            assert scores[i] >= 0
             for j in range(i + 1, n):
-                assert scores[j] >= 0
-                predictions.append((scores[j]) / (scores[i] + scores[j]))  # T-REX loss
+                predictions.append(nn.CrossEntropyLoss()(torch.stack((scores[i], scores[j])).reshape(1, 2), torch.tensor([1])))  # T-REX loss
 
-        l = -sum([p.clamp(min=10**-8, max=1).log() for p in predictions])  # clamp to avoid log(0)
+        l = sum([p for p in predictions])
         return l
-    
+
     def __init__(self, input_shape):
         super(RewardNet, self).__init__()
         self.input_shape = input_shape
@@ -32,7 +27,7 @@ class RewardNet(nn.Module):
         self.conv = nn.Conv2d(in_channels=1, out_channels=15, kernel_size=2)
         o = conv_output_size(input_shape[1], 2, 0, 1)
         self.fc = nn.Linear(15 * o * o, 1)
-        self.optimizer = optim.Adam(self.parameters(), lr=1e-3)
+        self.optimizer = optim.Adam(self.parameters(), lr=1e-5)
         # TODO regolarizzare
 
     def forward(self, x):
@@ -46,7 +41,7 @@ class RewardNet(nn.Module):
             self.optimizer.zero_grad()
             scores = torch.zeros(len(X_train))
             for t, trajectory in enumerate(X_train):
-                trajectory_score = self(trajectory).sum().clamp(max=50).exp()  # TODO il clamp servirebbe per evitare un input troppo grande all'exp, ma a volte qualcosa va storto comunque
+                trajectory_score = self(trajectory).sum()
                 scores[t] = trajectory_score
 
             l = RewardNet.loss(scores)
@@ -64,7 +59,7 @@ class RewardNet(nn.Module):
         with torch.no_grad():
             test_scores = []
             for t, trajectory in enumerate(X):
-                trajectory_score = self(trajectory).sum().exp()
+                trajectory_score = self(trajectory).sum()
                 test_scores.append(trajectory_score)
 
             quality = 0
