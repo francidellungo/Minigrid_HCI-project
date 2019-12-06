@@ -10,15 +10,8 @@ class RewardNet(nn.Module):
     """ this is a simple neural network """
     
     @staticmethod
-    def loss(scores):
-        n = len(scores)
-        predictions = []
-        for i in range(n - 1):
-            for j in range(i + 1, n):
-                predictions.append(nn.CrossEntropyLoss()(torch.stack((scores[i], scores[j])).reshape(1, 2), torch.tensor([1])))  # T-REX loss
-
-        l = sum([p for p in predictions])
-        return l
+    def loss(score_i, score_j): # T-REX loss for a pair of trajectories (or parts of them)
+        return nn.CrossEntropyLoss()(torch.stack((score_i, score_j)).reshape(1, 2), torch.tensor([1]))
 
     def __init__(self, input_shape):
         super(RewardNet, self).__init__()
@@ -28,6 +21,7 @@ class RewardNet(nn.Module):
         o = conv_output_size(input_shape[1], 2, 0, 1)
         self.fc = nn.Linear(15 * o * o, 1)
         self.optimizer = optim.Adam(self.parameters(), lr=1e-5)
+        self.batch_size = 5
         # TODO regolarizzare
 
     def forward(self, x):
@@ -38,19 +32,52 @@ class RewardNet(nn.Module):
     def fit(self, X_train, max_epochs=1000):
         # training
         for epoch in range(max_epochs):
-            self.optimizer.zero_grad()
+
+            # TODO make random subtrajectories
+
+            # give a score to each trajectory
             scores = torch.zeros(len(X_train))
             for t, trajectory in enumerate(X_train):
                 trajectory_score = self(trajectory).sum()
                 scores[t] = trajectory_score
 
-            l = RewardNet.loss(scores)
-            l.backward()
-            # TODO capire per quale motivo il gradiente e la loss a un certo punto esplodono
+            # prepare pairs of trajectories scores for loss calculation
+            pairs = []
+            s = len(scores)
+            for i in range(s - 1):
+                for j in range(i + 1, s):
+                    pairs.append([scores[i], scores[j]])
 
-            self.optimizer.step()
+            # random permute pairs
+            permutation = torch.randperm(len(pairs))
+            pairs = [pairs[p] for p in permutation]
 
-            print("epoch:", epoch, " loss:", l.item())
+            # make mini batches
+            self.batch_size = self.batch_size if self.batch_size < len(pairs) else len(pairs)
+            num_mini_batches = len(pairs) // self.batch_size
+            avg_loss = 0
+            for b in range(num_mini_batches):
+
+                self.optimizer.zero_grad()
+                # for each mini batch, calculate loss and update
+                partial_losses = []
+                for p in range(self.batch_size):
+                    # calculate loss for this pair
+                    scores_i, scores_j = pairs[b*self.batch_size + p]
+                    partial_losses.append(RewardNet.loss(scores_i, scores_j))
+
+                # calculate total loss of this mini batch
+                l = sum(partial_losses)
+                # backpropagation
+                l.backward(retain_graph=(b < num_mini_batches-1))
+                # retain_graph=True is required to not delete stored values during forward pass, because they are needed for next mini batch
+
+                # update net weights
+                self.optimizer.step()
+                avg_loss += l.item()
+
+            avg_loss /= (num_mini_batches * self.batch_size)
+            print("epoch:", epoch, " avg_loss:", avg_loss)
 
     def evaluate(self, X):
         # net evaluation
