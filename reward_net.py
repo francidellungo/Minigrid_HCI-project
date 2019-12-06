@@ -32,7 +32,7 @@ class RewardNet(nn.Module):
         self.conv = nn.Conv2d(in_channels=1, out_channels=15, kernel_size=2)
         o = conv_output_size(input_shape[1], 2, 0, 1)
         self.fc = nn.Linear(15 * o * o, 1)
-        self.optimizer = optim.Adam(self.parameters(), lr=1e-3)
+        self.optimizer = optim.Adam(self.parameters(), lr=1e-4)
         # TODO regolarizzare
 
     def forward(self, x):

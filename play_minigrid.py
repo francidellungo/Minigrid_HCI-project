@@ -1,5 +1,4 @@
-from __future__ import division, print_function
-
+# from __future__ import division, print_function
 import sys
 import torch
 import gym
@@ -66,18 +65,22 @@ def act_action(env, action):
     :param action: action taken
     :return:
     """
-    obs, reward, done, info = env.step(action)
-    print("state: ", state_filter(obs))
 
-    # Save state
-    game_info['trajectory'].append(state_filter(obs).tolist())
+    if action == 'exit_game':
+        done = True
+    else:
+        obs, reward, done, info = env.step(action)
+        print("state: ", state_filter(obs))
 
-    print('step=%s, reward=%.2f' % (env.step_count, reward))
+        # Save state
+        game_info['trajectory'].append(state_filter(obs).tolist())
 
-    # Save screenshots
-    screenshot_path = os.path.join(game_directory, 'game' + str(env.step_count) + '.png')
-    pixmap = env.render('pixmap')
-    screenshots.append((screenshot_path, pixmap))
+        print('step=%s, reward=%.2f' % (env.step_count, reward))
+
+        # Save screenshots
+        screenshot_path = os.path.join(game_directory, 'game' + str(env.step_count) + '.png')
+        pixmap = env.render('pixmap')
+        screenshots.append((screenshot_path, pixmap))
 
     if done:
         # Save images and json
@@ -143,7 +146,8 @@ def main():
             action = env.actions.drop
 
         elif keyName == 'RETURN':
-            action = env.actions.done
+            # action = env.actions.done
+            action = 'exit_game'
 
         # Screenshot functionality
         elif keyName == 'ALT':
