@@ -51,14 +51,14 @@ if __name__ == "__main__":
     reward_net.evaluate(X_test)
 
     # training
-    reward_net.fit(X_train, max_epochs=3000)
+    reward_net.fit(X_train, max_epochs=100)
 
     # evaluate after training
     reward_net.evaluate(X_test)
 
     with torch.no_grad():
         for trajectory in X_test:
-            print("score: " + str(reward_net(trajectory).mean()))
+            print("score: " + str(reward_net(trajectory).sum()))
 
     # save trained reward net
     torch.save(reward_net.state_dict(), "reward_net.pth") # TODO specificare file output da argomenti
