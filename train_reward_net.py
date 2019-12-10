@@ -23,93 +23,6 @@ if __name__ == "__main__":
     )
     (options, args) = parser.parse_args()
 
-    # training set
-    train_trajectories = [
-        [[[1, 0, 1],
-          [1, 0, 1],
-          [1, 0, 1]],
-         [[1, 0, 1],
-          [1, 0, 1],
-          [1, 0, 1]]
-         ],
-
-        [[[0, 1, 0],
-          [0, 1, 0],
-          [0, 1, 0]],
-         [[0, 1, 0],
-          [0, 1, 0],
-          [0, 1, 0]]
-         ],
-
-        [[[1, 0, 0],
-          [1, 0, 1],
-          [0, 0, 1]],
-         [[1, 0, 0],
-          [1, 0, 1],
-          [0, 0, 1]]
-         ],
-
-        [[[0, 0, 0],
-          [0, 1, 0],
-          [0, 1, 0]],
-         [[0, 0, 0],
-          [0, 1, 0],
-          [0, 1, 0]]
-         ],
-
-        [[[0, 0, 0],
-          [1, 1, 0],
-          [0, 0, 0]],
-         [[0, 0, 0],
-          [1, 1, 0],
-          [0, 0, 0]]
-         ],
-
-        [[[0, 0, 0],
-          [1, 1, 1],
-          [0, 0, 0]],
-         [[0, 0, 0],
-          [1, 1, 1],
-          [0, 0, 0]]
-         ],
-
-        [[[1, 1, 1],
-          [0, 0, 0],
-          [1, 1, 1]],
-         [[1, 1, 1],
-          [0, 0, 0],
-          [1, 1, 1]]
-         ],
-    ]
-
-    # test set
-    test_trajectories = [
-        [[[1, 0, 0],
-          [1, 0, 0],
-          [1, 0, 0]],
-         [[1, 0, 0],
-          [1, 0, 0],
-          [1, 0, 0]]
-         ],
-
-        [[[0, 0, 0],
-          [0, 1, 0],
-          [0, 0, 0]],
-         [[0, 0, 0],
-          [0, 1, 0],
-          [0, 0, 0]]
-         ],
-
-        [[[1, 1, 1],
-          [0, 0, 0],
-          [0, 0, 0]],
-         [[1, 1, 1],
-          [0, 0, 0],
-          [0, 0, 0]]
-         ],
-    ]
-
-
     # use GPU if available, otherwise use CPU
     device = "cuda" if torch.cuda.is_available() else "cpu"
 
@@ -119,21 +32,6 @@ if __name__ == "__main__":
         torch.backends.cudnn.deterministic = True
         torch.backends.cudnn.benchmark = False
 
-    ''' queste sono le traiettorie "hand_made", lo stato è un 3x3:
-        la rete dà un'alto score se l'input presenta righe orizzontali
-        invece lo score è basso se sono presenti righe verticali
-        il test è fatto da esempi non presenti nel train '''
-    # TODO rimuovere
-    # input_shape = 1, 3, 3
-    # X_train = torch.Tensor(train_trajectories).reshape((len(train_trajectories), -1, *input_shape)).to(device)
-    # X_test = torch.Tensor(test_trajectories).reshape((len(test_trajectories), -1, *input_shape)).to(device)
-
-    ''' queste sono traiettorie random, lo stato è un 7x7. Il test è ottenuto aggiungendo del rumore ai primi 10 esempi del train '''
-    # TODO rimuovere
-    # input_shape = 1, 7, 7
-    # X_train = torch.randn((20, 8, 7, 7)).reshape(20, -1, *input_shape).to(device)
-    # X_test = X_train[:10] + torch.randn(X_train[:10].shape).to(device) / 10
-
     ''' read all trajectories and create the training set as the set of trajectories ordered by score '''
     input_shape = 1, 7, 7
     games_path = os.path.join(games_path, options.env_name)
@@ -141,7 +39,8 @@ if __name__ == "__main__":
     games_info_files = os.path.join(games_directories, "game.json")
     games_info = sorted([json.load(open(file, "r")) for file in glob(games_info_files)], key=lambda x: x["score"])
     X_train = [torch.Tensor(game_info["trajectory"]).to(device) for game_info in games_info]
-    X_test = X_train  # TODO cambiare
+    X_test = X_train
+    #X_test = [X_train.pop(1), X_train.pop(2), X_train.pop()]
 
     reward_net = RewardNet(input_shape).to(device)
 
@@ -152,7 +51,7 @@ if __name__ == "__main__":
     reward_net.evaluate(X_test)
 
     # training
-    reward_net.fit(X_train, max_epochs=300)
+    reward_net.fit(X_train, max_epochs=100)
 
     # evaluate after training
     reward_net.evaluate(X_test)
