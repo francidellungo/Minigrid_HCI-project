@@ -5,6 +5,8 @@ import torch.optim as optim
 
 from utils import conv_output_size
 
+from tensorboardX import SummaryWriter
+
 
 class RewardNet(nn.Module):
     
@@ -49,13 +51,14 @@ class RewardNet(nn.Module):
         # TODO tutti questi iperparametri sono completamente ad occhio: vanno scelti per bene (ma in che modo?)
         # TODO la loro scelta dipende da varie cose, ad esempio se consideriamo o meno anche le traiettorie complete nel calolo della loss oppure solo quelle parziali
 
-
     def forward(self, x):
         x = x.view(-1, *self.input_shape)
         batch_size = len(x)
         return self.fc(F.relu(self.conv(x)).view(batch_size, -1))
 
-    def fit(self, X_train, max_epochs=1000, batch_size=16, num_subtrajectories=5, subtrajectory_length=4):
+    def fit(self, X_train, max_epochs=1000, batch_size=16, num_subtrajectories=5, subtrajectory_length=4, X_val=None):
+
+        tensorboard = SummaryWriter("tensorboard/")# + hyp_opt_name + ",lr=" + str(learning_rate) + ",wd=" + str(weight_decay))
 
         # TODO ha senso che subtrajectory_length invece di una costante sia un range entro il quale scegliere a random la lunghezza della sottotraiettoria?
         # TODO bisogna capire quale è un buon modo per scegliere tutti questi iperparametri delle sottotraiettorie
@@ -109,7 +112,7 @@ class RewardNet(nn.Module):
             # make mini batches
             batch_size = batch_size if batch_size < len(pairs) else len(pairs)
             num_mini_batches = len(pairs) // batch_size
-            avg_loss = 0
+            avg_batch_loss = 0
             for b in range(num_mini_batches):
 
                 self.optimizer.zero_grad()
@@ -131,35 +134,59 @@ class RewardNet(nn.Module):
 
                 # update net weights
                 self.optimizer.step()
-                avg_loss += l.item()
+                avg_batch_loss += l.item()
 
-            avg_loss /= num_mini_batches
-            print("epoch:", epoch, " avg_loss:", avg_loss)
+            avg_batch_loss /= num_mini_batches
 
-    def evaluate(self, X):
+            epoch_summary = "epoch: " + str(epoch) + "  avg_batch_loss: " + str(avg_batch_loss)
+            values = self.evaluate(X_train, [self.quality])
+            train_quality = values[0]
+            epoch_summary += "  quality_on_train: " + str(train_quality)
+
+            tensorboard.add_scalar('metrics/average batch loss', avg_batch_loss, epoch)
+            tensorboard.add_scalar('metrics/quality on training set', train_quality, epoch)
+
+            if X_val is not None:
+                values = self.evaluate(X_val, [self.quality])
+                val_quality = values[0]
+                epoch_summary += "  quality_on_val: " + str(val_quality)
+                tensorboard.add_scalar('metrics/quality on validation set', val_quality, epoch)
+
+            print(epoch_summary)
+
+        tensorboard.close()
+
+    def evaluate(self, X, metrics):
         # net evaluation
         training = self.training
         self.eval()  # same as: self.training = False
+        values = []
         with torch.no_grad():
-            test_scores = []
-            for t, trajectory in enumerate(X):
-                trajectory_score = self(trajectory).sum()
-                test_scores.append(trajectory_score)
-
-            quality = 0
-
-            for i in range(len(test_scores)):
-                for j in range(len(test_scores)):
-                    if i == j:
-                        continue
-                    print("i: " + str(i) + ", j: " + str(j) + ", P(J(τj) > J(τi)): " + str(test_scores[j].exp() / (test_scores[i].exp() + test_scores[j].exp() + 10 ** -7)))
-
-                    if j > i and test_scores[j] > test_scores[i]:
-                            quality += 1
-
-            n = len(test_scores)
-            quality /= n * (n-1) / 2
-            print("quality:", quality)
-            # quality is the percentage of correctly discriminated pairs
+            for metric in metrics:
+                values.append(metric(X))
 
         self.training = training  # restore previous training state
+        return values
+
+    def quality(self, X):
+        test_scores = []
+        for t, trajectory in enumerate(X):
+            trajectory_score = self(trajectory).sum()
+            test_scores.append(trajectory_score)
+
+        quality = 0
+
+        for i in range(len(test_scores)):
+            for j in range(len(test_scores)):
+                if i == j:
+                    continue
+                # print("i: " + str(i) + ", j: " + str(j) + ", P(J(τj) > J(τi)): " + str(
+                #     test_scores[j].exp() / (test_scores[i].exp() + test_scores[j].exp() + 10 ** -7)))
+
+                if j > i and test_scores[j] > test_scores[i]:
+                    quality += 1
+
+        n = len(test_scores)
+        quality /= n * (n - 1) / 2
+        # quality is the fraction of correctly discriminated pairs
+        return quality

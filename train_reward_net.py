@@ -40,7 +40,7 @@ if __name__ == "__main__":
     games_info = sorted([json.load(open(file, "r")) for file in glob(games_info_files)], key=lambda x: x["score"])
     X_train = [torch.Tensor(game_info["trajectory"]).to(device) for game_info in games_info]
     X_test = X_train
-    #X_test = [X_train.pop(1), X_train.pop(2), X_train.pop()]
+    X_val = [X_train.pop(1), X_train.pop(2), X_train.pop()]
 
     reward_net = RewardNet(input_shape).to(device)
 
@@ -48,13 +48,13 @@ if __name__ == "__main__":
     print(summary(reward_net, input_shape, device=device))
 
     # evaluate before training
-    reward_net.evaluate(X_test)
+    reward_net.evaluate(X_test, [reward_net.quality])
 
     # training
-    reward_net.fit(X_train, max_epochs=100)
+    reward_net.fit(X_train, max_epochs=1000, X_val=X_val)
 
     # evaluate after training
-    reward_net.evaluate(X_test)
+    reward_net.evaluate(X_test, [reward_net.quality])
 
     with torch.no_grad():
         for trajectory in X_test:
