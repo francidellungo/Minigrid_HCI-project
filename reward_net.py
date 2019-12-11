@@ -66,7 +66,7 @@ class RewardNet(nn.Module):
         batch_size = len(x)
         return self.fc(F.relu(self.conv(x)).view(batch_size, -1))
 
-    def fit(self, X_train, max_epochs=1000, batch_size=16, num_subtrajectories=5, subtrajectory_length=4):
+    def fit(self, X_train, max_epochs=1000, batch_size=16, num_subtrajectories=6, subtrajectory_length=6):
 
         # TODO ha senso che subtrajectory_length invece di una costante sia un range entro il quale scegliere a random la lunghezza della sottotraiettoria?
         # TODO bisogna capire quale è un buon modo per scegliere tutti questi iperparametri delle sottotraiettorie
@@ -165,7 +165,7 @@ class RewardNet(nn.Module):
                     print("i: " + str(i) + ", j: " + str(j) + ", P(J(τj) > J(τi)): " + str(test_scores[j].exp() / (test_scores[i].exp() + test_scores[j].exp() + 10 ** -7)))
 
                     if j > i and test_scores[j] > test_scores[i]:
-                            quality += 1
+                        quality += 1
 
             n = len(test_scores)
             quality /= n * (n-1) / 2

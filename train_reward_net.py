@@ -61,4 +61,4 @@ if __name__ == "__main__":
             print("score: " + str(reward_net(trajectory).sum()))
 
     # save trained reward net
-    torch.save(reward_net.state_dict(), "reward_net.pth") # TODO specificare file output da argomenti
+    torch.save(reward_net.state_dict(), "reward_net.pth")  # TODO specificare file output da argomenti
