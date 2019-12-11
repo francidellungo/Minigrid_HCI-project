@@ -14,9 +14,10 @@ import torch.autograd as autograd
 from torch.distributions.categorical import Categorical
 from itertools import count
 from datetime import datetime
-
+from plot_rewards import plot_reward
 
 games_path = 'games'
+plot_path = 'figures'
 
 # A simple, memoryless MLP agent. Last layer are logits (scores for
 # which higher values represent preferred actions.
@@ -135,6 +136,10 @@ if __name__ == '__main__':
     avg_reward = 0.0  # avg reward per game
     rewards = []
 
+    # Plot and save rewards
+    plot = True
+    save_rewards_plot = True
+
     # Setup OpenAI Gym environment for guessing game.
     env = gym.make('MiniGrid-Empty-6x6-v0')
     # env = gym.make('MiniGrid-MultiRoom-N6-v0')
@@ -222,6 +227,10 @@ if __name__ == '__main__':
 
             with open(os.path.join(game_directory, 'game.json'), 'w+') as game_file:
                 json.dump(game_info, game_file, ensure_ascii=False)
+
+    # plot and save rewards
+    if plot:
+        plot_reward(rewards, save_rewards_plot, plot_path)
 
     # save file of avg scores
     with open(os.path.join(games_path, env_name, 'avg_rewards.json'), 'w+') as reward_file:
