@@ -19,17 +19,28 @@ class RewardNet(nn.Module):
         # define some local variable just to use shorter variable names
         tis = trajectory_i_scores
         tjs = trajectory_j_scores
-        l = subtrajectory_length
+        sub_len = subtrajectory_length
         li = len(trajectory_i_scores)
         lj = len(trajectory_j_scores)
 
+        if type(sub_len) == tuple:
+            assert len(sub_len) == 2
+            inf = sub_len[0]
+            sup = sub_len[1]
+            sub_len = torch.randint(low=inf, high=sup, size=(1,))
+
+        # Control if some of the sub trajectory has length < of the defined sub_length (ai cant be 0-> len = min -1)
+        if min(li, lj) < sub_len:
+            sub_len = min(li, lj) - 1
+
         # random choose subtrajectories
         # in the T-REX paper, is ensured that aj>=ai, but in minigrid this seems to not have much sense since better trajectories are usually shorter
-        ai = torch.randint(low=0, high=li-subtrajectory_length, size=(1,))  # random begin for subtrajectory of trajectory i
-        aj = torch.randint(low=0, high=lj-subtrajectory_length, size=(1,))  # random begin for subtrajectory of trajectory j
+        ai = torch.randint(low=0, high=li-sub_len, size=(1,))  # random begin for subtrajectory of trajectory i
+        aj = torch.randint(low=0, high=lj-sub_len, size=(1,))  # random begin for subtrajectory of trajectory j
+
 
         # for both subtrajectories, return both sums of scores (for T-REX loss) and sums of absolute values of scores (for reward regularization)
-        return sum(tis[ai: ai+l]), sum(tjs[aj: aj+l]), sum(tis[ai: ai + l].abs()), sum(tjs[aj: aj + l].abs())
+        return sum(tis[ai: ai+sub_len]), sum(tjs[aj: aj+sub_len]), sum(tis[ai: ai + sub_len].abs()), sum(tjs[aj: aj + sub_len].abs())
 
     def __init__(self, input_shape, lr=1e-4):
         super(RewardNet, self).__init__()
@@ -82,7 +93,6 @@ class RewardNet(nn.Module):
             # for t_len in t_lens:
             #     trajectories_scores.append(scores[begin:begin+t_len])
             #     begin += t_len
-
 
             # prepare pairs of trajectories scores for loss calculation
             pairs = []          # needed for T-REX loss

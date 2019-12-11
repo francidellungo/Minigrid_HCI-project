@@ -1,3 +1,4 @@
 *.pyc
 gym-minigrid/*
 games/*
+games_old/*
