@@ -7,7 +7,7 @@ import torch
 
 from torchsummary import summary
 
-from reward_net import RewardNet
+from reward_nets.base_reward_net import RewardNet
 
 if __name__ == "__main__":
 
@@ -51,7 +51,7 @@ if __name__ == "__main__":
     reward_net.evaluate(X_test, [reward_net.quality])
 
     # training
-    reward_net.fit(X_train, max_epochs=1000, X_val=X_val)
+    reward_net.fit(X_train, max_epochs=100, X_val=X_val)
 
     # evaluate after training
     reward_net.evaluate(X_test, [reward_net.quality])
