@@ -210,10 +210,18 @@ def main():
 
     if options.policy_net is not None:
 
-        agent = torch.load(os.path.join(options.policy_net, "net.pth"))
-        episodes_saved_weights = [int(state.rsplit("-", 1)[1].split(".", 1)[0]) for state in glob(os.path.join(options.policy_net, "policy_net-*.pth"))]
-        most_recent_weights = max(episodes_saved_weights)
-        agent.load_state_dict(torch.load(os.path.join(options.policy_net, "policy_net-" + str(most_recent_weights) + ".pth")))
+        if options.policy_net.endswith(".pth"):
+            # select specified weights
+            epoch_to_load_weights = options.policy_net.rsplit("-", 1)[1].split(".", 1)[0]
+            policy_net_dir = os.path.dirname(options.policy_net)
+        else:
+            # load the most recent weights from the specified folder
+            episodes_saved_weights = [int(state.rsplit("-", 1)[1].split(".", 1)[0]) for state in glob(os.path.join(options.policy_net, "policy_net-*.pth"))]
+            epoch_to_load_weights = max(episodes_saved_weights)
+            policy_net_dir = options.policy_net
+
+        agent = torch.load(os.path.join(policy_net_dir, "net.pth"))
+        agent.load_state_dict(torch.load(os.path.join(policy_net_dir, "policy_net-" + str(epoch_to_load_weights) + ".pth")))
         agent = agent.to(device)
 
     done = False
