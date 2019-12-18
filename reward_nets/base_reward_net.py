@@ -1,11 +1,16 @@
+import io
+import json
+import os
+from abc import abstractmethod
+from contextlib import redirect_stdout
+import matplotlib.pyplot as plt
+import numpy as np
+
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
-import torch.optim as optim
-
-from utils import conv_output_size
 
 from tensorboardX import SummaryWriter
+from torchsummary import summary
 
 
 class RewardNet(nn.Module):
@@ -44,32 +49,23 @@ class RewardNet(nn.Module):
         # for both subtrajectories, return both sums of scores (for T-REX loss) and sums of absolute values of scores (for reward regularization)
         return sum(tis[ai: ai+sub_len]), sum(tjs[aj: aj+sub_len]), sum(tis[ai: ai + sub_len].abs()), sum(tjs[aj: aj + sub_len].abs())
 
+    @abstractmethod
     def __init__(self, input_shape, lr=1e-4):
         super(RewardNet, self).__init__()
-        self.input_shape = input_shape
 
-        # simple net with: 2D convolutional layer -> activation layer -> fully connected layer
-        self.conv = nn.Conv2d(in_channels=1, out_channels=15, kernel_size=2)
-        o = conv_output_size(input_shape[1], 2, 0, 1)
-        self.fc = nn.Linear(15 * o * o, 1)
-
-        # regularization
-        weight_decay = 10 ** -4  # penalty for net weights L2 regularization
-        self.optimizer = optim.Adam(self.parameters(), lr=lr, weight_decay=weight_decay)
-        self.lambda_abs_rewards = 10 ** -3  # penalty for rewards regularization
-
-        # TODO tutti questi iperparametri dovrebbero essere presi come parametri in ingresso
-        # TODO tutti questi iperparametri sono completamente ad occhio: vanno scelti per bene (ma in che modo?)
-        # TODO la loro scelta dipende da varie cose, ad esempio se consideriamo o meno anche le traiettorie complete nel calolo della loss oppure solo quelle parziali
-
+    @abstractmethod
     def forward(self, x):
-        x = x.view(-1, *self.input_shape)
-        batch_size = len(x)
-        return self.fc(F.relu(self.conv(x)).view(batch_size, -1))
+        pass
 
-    def fit(self, X_train, max_epochs=1000, batch_size=16, num_subtrajectories=6, subtrajectory_length=6, X_val=None):
+    def fit(self, X_train, max_epochs=1000, batch_size=16, num_subtrajectories=30, subtrajectory_length=5, X_val=None, output_folder="", use_also_complete_trajectories=True, train_games_info=None, val_games_info=None, autosave=False, epochs_for_checkpoint=None):
 
-        tensorboard = SummaryWriter("tensorboard/")# + hyp_opt_name + ",lr=" + str(learning_rate) + ",wd=" + str(weight_decay))
+        print('output directory: "' + os.path.abspath(output_folder) + '"')
+        tb_path = os.path.abspath(os.path.join(output_folder, "tensorboard"))
+        print('to visualize training progress: `tensorboard --logdir="{}"`'.format(tb_path))
+        self.save_training_details(output_folder, batch_size, num_subtrajectories, subtrajectory_length, use_also_complete_trajectories)
+        tensorboard = SummaryWriter(tb_path)
+
+        torch.save(self, os.path.join(output_folder, "net.pth"))
 
         # TODO ha senso che subtrajectory_length invece di una costante sia un range entro il quale scegliere a random la lunghezza della sottotraiettoria?
         # TODO bisogna capire quale è un buon modo per scegliere tutti questi iperparametri delle sottotraiettorie
@@ -80,39 +76,38 @@ class RewardNet(nn.Module):
         #
         # X_train = torch.cat([trajectory for trajectory in X_train])
 
+
+
         # training
         for epoch in range(max_epochs):
 
-            # give a score to each trajectory
-            trajectories_scores = []
-            for t, trajectory in enumerate(X_train):
-                trajectory_scores = self(trajectory)
-                trajectories_scores.append(trajectory_scores)
+            # give a score to each train trajectory
+            train_trajectories_scores = self.calculate_trajectories_scores(X_train)
 
             # TODO queste righe sotto commentate (e le righe prima del for) sono un tentativo di sfruttare meglio la potenza di calcolo della GPU, ma per ora non sembrano avere una particolare influenza
             # scores = self(X_train)
-            # trajectories_scores = []
+            # train_trajectories_scores = []
             # begin = 0
             # for t_len in t_lens:
-            #     trajectories_scores.append(scores[begin:begin+t_len])
+            #     train_trajectories_scores.append(scores[begin:begin+t_len])
             #     begin += t_len
 
             # prepare pairs of trajectories scores for loss calculation
             pairs = []          # needed for T-REX loss
             abs_rewards = []    # needed for reward regularization
-            s = len(trajectories_scores)
+            s = len(train_trajectories_scores)
             for i in range(s - 1):
                 for j in range(i + 1, s):
                     # TODO è corretto considerare sempre tutte le possibili coppie? Oppure anche le coppie dovrebbero essere scelte a random in ogni epoca?
                     # for each pair of trajectories, select num_subtrajectories random subtrajectories
                     for k in range(num_subtrajectories):
-                        sum_i, sum_j, sum_abs_i, sum_abs_j = RewardNet.extract_random_subtrajectories_scores(trajectories_scores[i], trajectories_scores[j], subtrajectory_length)
+                        sum_i, sum_j, sum_abs_i, sum_abs_j = RewardNet.extract_random_subtrajectories_scores(train_trajectories_scores[i], train_trajectories_scores[j], subtrajectory_length)
                         pairs.append([sum_i, sum_j])
                         abs_rewards.append([sum_abs_i, sum_abs_j])
 
                     # TODO consideriamo anche le traiettorie complete oppure solo le sottotraiettorie random?
-                    pairs.append([sum(trajectories_scores[i]), sum(trajectories_scores[j])])
-                    abs_rewards.append([sum(trajectories_scores[i].abs()), sum(trajectories_scores[j].abs())])
+                    pairs.append([sum(train_trajectories_scores[i]), sum(train_trajectories_scores[j])])
+                    abs_rewards.append([sum(train_trajectories_scores[i].abs()), sum(train_trajectories_scores[j].abs())])
 
             # random permute pairs
             permutation = torch.randperm(len(pairs))
@@ -148,35 +143,40 @@ class RewardNet(nn.Module):
 
             avg_batch_loss /= num_mini_batches
 
-            epoch_summary = "epoch: " + str(epoch) + "  avg_batch_loss: " + str(avg_batch_loss)
-            values = self.evaluate(X_train, [self.quality])
-            train_quality = values[0]
-            epoch_summary += "  quality_on_train: " + str(train_quality)
+            train_corr = self.correlation(train_trajectories_scores, train_games_info)
+            train_quality = self.quality(X_train)
 
-            tensorboard.add_scalar('metrics/average batch loss', avg_batch_loss, epoch)
-            tensorboard.add_scalar('metrics/quality on training set', train_quality, epoch)
+            if autosave and epochs_for_checkpoint is not None and epoch % epochs_for_checkpoint == 0:
+                self.save_checkpoint(epoch, output_folder)
+
+            epoch_summary = "epoch: {},  avg_batch_loss: {:7.4f},  correlation_on_train: {:7.4f},  quality_on_train: {:7.4f}".\
+                format(epoch, avg_batch_loss, train_corr, train_quality)
+
+            tensorboard.add_scalar('average training batch loss', avg_batch_loss, epoch)
+            tensorboard.add_scalars('correlation', {"train": train_corr}, epoch)
+            tensorboard.add_scalars('quality', {"train": train_quality}, epoch)
 
             if X_val is not None:
-                values = self.evaluate(X_val, [self.quality])
-                val_quality = values[0]
-                epoch_summary += "  quality_on_val: " + str(val_quality)
-                tensorboard.add_scalar('metrics/quality on validation set', val_quality, epoch)
+                if val_games_info is not None:
+                    val_trajectories_scores = self.calculate_trajectories_scores(X_val)
+                    val_corr = self.correlation(val_trajectories_scores, val_games_info)
+                    epoch_summary += ",  correlation_on_val: {:7.4f}".format(val_corr)
+                    tensorboard.add_scalars('correlation', {"val": val_corr}, epoch)
+                val_quality = self.quality(X_val)
+                epoch_summary += ",  quality_on_val: {:7.4f}".format(val_quality)
+                tensorboard.add_scalars('quality', {"val": val_quality}, epoch)
 
             print(epoch_summary)
 
         tensorboard.close()
 
-    def evaluate(self, X, metrics):
-        # net evaluation
-        training = self.training
-        self.eval()  # same as: self.training = False
-        values = []
-        with torch.no_grad():
-            for metric in metrics:
-                values.append(metric(X))
+    def calculate_trajectories_scores(self, X):
+        trajectories_scores = []
+        for t, trajectory in enumerate(X):
+            trajectory_scores = self(trajectory)
+            trajectories_scores.append(trajectory_scores)
 
-        self.training = training  # restore previous training state
-        return values
+        return trajectories_scores
 
     def quality(self, X):
         test_scores = []
@@ -200,3 +200,46 @@ class RewardNet(nn.Module):
         quality /= n * (n - 1) / 2
         # quality is the fraction of correctly discriminated pairs
         return quality
+
+    def correlation(self, trajectories_scores, games_info):
+
+        true_trajectories_scores = [x["score"] for x in games_info]
+
+        true_mx = max(true_trajectories_scores)
+        true_mn = min(true_trajectories_scores)
+        assert true_mx > true_mn
+
+        trajectories_scores = [sum(scores).item() for scores in trajectories_scores]
+        mx = max(trajectories_scores)
+        mn = min(trajectories_scores)
+        assert mx > mn
+
+        normalized_trajectories_scores = [(s-mn)/(mx-mn)*(true_mx-true_mn) + true_mn for s in trajectories_scores]
+        # print("corr")
+        # print(np.corrcoef(true_trajectories_scores, trajectories_scores))
+        # print(np.corrcoef(true_trajectories_scores, normalized_trajectories_scores))
+        # plt.scatter(true_trajectories_scores, trajectories_scores)
+        # plt.show()
+        return np.corrcoef(true_trajectories_scores, normalized_trajectories_scores)[0][1]
+
+    def save_training_details(self, output_folder, batch_size, num_subtrajectories, subtrajectory_length, use_also_complete_trajectories):
+        if not os.path.exists(output_folder):
+            os.makedirs(output_folder)
+
+        with open(os.path.join(output_folder, "training.json"), "wt") as file:
+            # (7,7,3) == self.env.observation_space.spaces['image'].shape
+            with io.StringIO() as out, redirect_stdout(out):
+                summary(self, (1, 7, 7)) # TODO sistemare questo shape
+                net_summary = out.getvalue()
+            print(net_summary)
+            json.dump({"type": str(type(self)), "str": str(self).replace("\n", ""), "optimizer": str(self.optimizer),
+                       "penalty_rewards": self.lambda_abs_rewards, "batch_size": batch_size,
+                       "num_subtrajectories": num_subtrajectories, "subtrajectory_length": subtrajectory_length,
+                       "use_also_complete_trajectories": use_also_complete_trajectories, "summary": net_summary},
+                      file, indent=True)
+
+    def save_checkpoint(self, epoch, output_folder):
+        if not os.path.exists(output_folder):
+            os.makedirs(output_folder)
+        checkpoint_file = os.path.join(output_folder, "reward_net-" + str(epoch) + ".pth")
+        torch.save(self.state_dict(), checkpoint_file)
