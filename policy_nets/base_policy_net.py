@@ -114,7 +114,7 @@ class PolicyNet(nn.Module):
             state = self.state_filter(state)
             if reward_net is not None:
                 with torch.no_grad():
-                    reward = reward_net(state)  # TODO controllare nel paper quale è il modo giusto di calcolare il reward
+                    reward = reward_net(state).item()  # TODO controllare nel paper quale è il modo giusto di calcolare il reward
             else:
                 reward = r
             states.append(state)
