@@ -136,9 +136,9 @@ if __name__ == '__main__':
     avg_reward = 0.0  # avg reward per game
     rewards = []
 
-    # Plot and save rewards
+    # Plot (matplotlib) and save rewards
     plot = True
-    save_rewards_plot = True
+    save_rewards_plot = False
 
     # Setup OpenAI Gym environment for guessing game.
     env = gym.make('MiniGrid-Empty-6x6-v0')

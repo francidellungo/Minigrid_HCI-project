@@ -17,8 +17,10 @@ game_name = None
 game_info = {
     'name': game_name,
     'trajectory': [],
-    'score': None
+    'score': None,
+    'to_cancel': False
 }
+# to cancel == True if the trajectory is deleted from the player (useful for the graphical interface)
 game_directory = None
 screenshots = []
 

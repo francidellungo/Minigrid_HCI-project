@@ -1,13 +1,14 @@
 import sys
+import os
 from PyQt5.QtWidgets import QApplication, QMainWindow, QDialog, QLabel, QPushButton, QHBoxLayout
 from PyQt5.QtGui import QIcon, QPixmap, QMovie
 from PyQt5.QtCore import QByteArray, QTimer
 # from Ui_mainWindow import Ui_MainWindow
 
-from Ui_minigrid import Ui_MainWindow
+# from Ui_minigrid import Ui_MainWindow
 from Ui_newGame import Ui_new_game_Dialog
-from Ui_main_scrollbar import Ui_MainWindow
-
+# from Ui_main_scrollbar import Ui_MainWindow
+from Ui_scrollbar_v2 import Ui_MainWindow
 # class MainWindow_(QMainWindow):
 #     def __init__(self):
 #         super().__init__()
@@ -70,12 +71,17 @@ from Ui_main_scrollbar import Ui_MainWindow
 #
 
 path_of_image = 'games/MiniGrid-Empty-6x6-v0/2019-12-11_13:40:14/game'
+games_path = 'games'
+env = 'MiniGrid-Empty-6x6-v0'
 
+# os.path.join(game_directory, 'game.json')
 
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
         self.initUI()
+
+        print(len(os.listdir(os.path.join(games_path, env))))   # dir is your directory path
 
         # movie = QMovie('image/example.gif', QByteArray())
         # self.ui.image_1.setMovie(movie)
@@ -92,31 +98,60 @@ class MainWindow(QMainWindow):
         # show sequence of images
         # TODO show images in loop
         # TODO change image only when mouse is on it
-        self.count = 0
-        timer = QTimer(self)
-        timer.timeout.connect(lambda: self.update_image(self.count))
-        timer.start(200)
+        self.initTimer()
         self.update_image(self.count)
 
     def initUI(self):
+        """
+        Main window initialization
+        :return:
+        """
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
+        # self.ui.pushButton_6.setMinimumHeight(28)
         self.new_game_Dialog = NewGame()
         self.ui.new_game_pb.clicked.connect(lambda: self.add_row('row1'))
 
 
+        # list of image labels
+        # TODO remove later
+        # images_l = []
+        # images_l.append(self.ui.image_1)
+        # images_l.append(self.ui.image_2)
+
+    def initTimer(self):
+        """
+        Initialize Timer to show images of trajectories in loop
+        :return:
+        """
+        self.count = 0
+        timer = QTimer(self)
+        timer.timeout.connect(lambda: self.update_image(self.count))
+        timer.start(200)
+
     def update_image(self, count):
+        """
+        Update images of trajectories
+        :param count: index of image to show
+        :return:
+        """
         image = path_of_image + str(count) + '.png'
         pixmap = QPixmap(image)
-        print('new image : ' + image + ' '+ str(pixmap.isNull()))
+        print('new image : ' + image + ' ' + str(pixmap.isNull()))
 
         # if not pixmap.isNull():
         self.count = self.count + 1
-        self.ui.image_1.setPixmap(pixmap)
+        # self.ui.image_1.setPixmap(pixmap)
         # self.label.adjustSize()
         # self.ui.image_1.resize(pixmap.size())
 
     def add_row(self, name):
+        """
+        Add new row ( new game) to the list of games
+        :param name: name of the new game
+        :return:
+        """
+        # TODO extend so that it can be used both for new trajectories and for ranking
         horiz = QHBoxLayout()
         label = QLabel(name)
         info_button = QPushButton('info')
@@ -125,7 +160,7 @@ class MainWindow(QMainWindow):
         horiz.addWidget(info_button)
         horiz.addWidget(move_button)
 
-        self.ui.games_verticalLayout.addLayout(horiz)
+        self.ui.verticalLayout_2.addLayout(horiz)
 
 class NewGame(QDialog):
     def __init__(self, **kwargs):
