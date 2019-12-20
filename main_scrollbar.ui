@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>905</width>
-    <height>681</height>
+    <width>910</width>
+    <height>785</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -20,7 +20,7 @@
       <item>
        <widget class="QScrollArea" name="games_scrollArea">
         <property name="sizePolicy">
-         <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+         <sizepolicy hsizetype="Fixed" vsizetype="Expanding">
           <horstretch>0</horstretch>
           <verstretch>0</verstretch>
          </sizepolicy>
@@ -30,6 +30,9 @@
           <width>0</width>
           <height>0</height>
          </size>
+        </property>
+        <property name="horizontalScrollBarPolicy">
+         <enum>Qt::ScrollBarAlwaysOff</enum>
         </property>
         <property name="sizeAdjustPolicy">
          <enum>QAbstractScrollArea::AdjustIgnored</enum>
@@ -44,10 +47,16 @@
          <property name="geometry">
           <rect>
            <x>0</x>
-           <y>0</y>
-           <width>438</width>
-           <height>562</height>
+           <y>36</y>
+           <width>440</width>
+           <height>586</height>
           </rect>
+         </property>
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
          </property>
          <widget class="QWidget" name="verticalLayoutWidget_2">
           <property name="geometry">
@@ -68,9 +77,16 @@
            <item>
             <layout class="QHBoxLayout" name="game1_horizontalLayout_2">
              <item>
-              <widget class="QLabel" name="label_3">
+              <widget class="QLabel" name="game1_name">
                <property name="text">
-                <string>TextLabel</string>
+                <string>game 1 </string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QLabel" name="image_1">
+               <property name="text">
+                <string>image 1</string>
                </property>
               </widget>
              </item>
@@ -96,9 +112,16 @@
               <number>0</number>
              </property>
              <item>
-              <widget class="QLabel" name="label_4">
+              <widget class="QLabel" name="game2_name">
                <property name="text">
-                <string>TextLabel</string>
+                <string>game 2</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QLabel" name="image_2">
+               <property name="text">
+                <string>image2</string>
                </property>
               </widget>
              </item>
@@ -125,18 +148,30 @@
       </item>
       <item>
        <widget class="QScrollArea" name="ranking_scrollArea">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Fixed" vsizetype="Expanding">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="horizontalScrollBarPolicy">
+         <enum>Qt::ScrollBarAlwaysOff</enum>
+        </property>
         <property name="sizeAdjustPolicy">
          <enum>QAbstractScrollArea::AdjustIgnored</enum>
         </property>
         <property name="widgetResizable">
          <bool>false</bool>
         </property>
+        <property name="alignment">
+         <set>Qt::AlignCenter</set>
+        </property>
         <widget class="QWidget" name="scrollAreaWidgetContents_6">
          <property name="geometry">
           <rect>
            <x>0</x>
-           <y>0</y>
-           <width>437</width>
+           <y>36</y>
+           <width>440</width>
            <height>586</height>
           </rect>
          </property>
@@ -303,7 +338,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>905</width>
+     <width>910</width>
      <height>22</height>
     </rect>
    </property>

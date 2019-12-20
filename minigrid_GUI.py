@@ -1,6 +1,7 @@
 import sys
 from PyQt5.QtWidgets import QApplication, QMainWindow, QDialog, QLabel, QPushButton, QHBoxLayout
-from PyQt5.QtGui import QIcon, QPixmap
+from PyQt5.QtGui import QIcon, QPixmap, QMovie
+from PyQt5.QtCore import QByteArray, QTimer
 # from Ui_mainWindow import Ui_MainWindow
 
 from Ui_minigrid import Ui_MainWindow
@@ -68,21 +69,52 @@ from Ui_main_scrollbar import Ui_MainWindow
 #         self.ui.tree_games.addTopLevelItems(l)
 #
 
+path_of_image = 'games/MiniGrid-Empty-6x6-v0/2019-12-11_13:40:14/game'
+
 
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
+        self.initUI()
 
-        self.ui = Ui_MainWindow()
-        self.ui.setupUi(self)
+        # movie = QMovie('image/example.gif', QByteArray())
+        # self.ui.image_1.setMovie(movie)
+        # movie.start()
 
+        # pixmap = QPixmap('games/MiniGrid-Empty-6x6-v0/2019-12-11_13:40:14/game1.png')
+        # self.ui.image_1.setPixmap(pixmap)
 
-        pixmap = QPixmap('games/MiniGrid-Empty-6x6-v0/2019-12-11_13:40:14/game1.png')
         # connect button New Game
-        self.new_game_Dialog = NewGame()
+
         # self.ui.new_game_pb.clicked.connect(lambda: self.new_game_Dialog.exec_())
         # ly = self.ui.games_verticalLayout
+
+        # show sequence of images
+        # TODO show images in loop
+        # TODO change image only when mouse is on it
+        self.count = 0
+        timer = QTimer(self)
+        timer.timeout.connect(lambda: self.update_image(self.count))
+        timer.start(200)
+        self.update_image(self.count)
+
+    def initUI(self):
+        self.ui = Ui_MainWindow()
+        self.ui.setupUi(self)
+        self.new_game_Dialog = NewGame()
         self.ui.new_game_pb.clicked.connect(lambda: self.add_row('row1'))
+
+
+    def update_image(self, count):
+        image = path_of_image + str(count) + '.png'
+        pixmap = QPixmap(image)
+        print('new image : ' + image + ' '+ str(pixmap.isNull()))
+
+        # if not pixmap.isNull():
+        self.count = self.count + 1
+        self.ui.image_1.setPixmap(pixmap)
+        # self.label.adjustSize()
+        # self.ui.image_1.resize(pixmap.size())
 
     def add_row(self, name):
         horiz = QHBoxLayout()
@@ -92,6 +124,7 @@ class MainWindow(QMainWindow):
         horiz.addWidget(label)
         horiz.addWidget(info_button)
         horiz.addWidget(move_button)
+
         self.ui.games_verticalLayout.addLayout(horiz)
 
 class NewGame(QDialog):
