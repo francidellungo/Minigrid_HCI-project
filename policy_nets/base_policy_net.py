@@ -39,9 +39,9 @@ class PolicyNet(nn.Module):
     def fit(self, episodes=100, batch_size=16, reward=None, render=False, autosave=False, episodes_for_checkpoint=None, output_folder=""):
 
         ''' print info to open output directory and to open tensorboard '''
-        print('output directory: "' + os.path.abspath(output_folder) + '"')
+        print('output directory:\n"' + os.path.abspath(output_folder) + '"')
         tb_path = os.path.abspath(os.path.join(output_folder, "tensorboard"))
-        print('to visualize training progress: `tensorboard --logdir="{}"`'.format(tb_path))
+        print('to visualize training progress:\n`tensorboard --logdir="{}"`'.format(tb_path))
         tensorboard = SummaryWriter(tb_path)
 
         ''' save info about this training in training.json, and also save the structure of the network '''
@@ -203,7 +203,8 @@ class PolicyNet(nn.Module):
                 summary(self, (1, 7, 7))
                 net_summary = out.getvalue()
             print(net_summary)
-            json.dump({"type": str(type(self)), "str": str(self).replace("\n", ""), "reward": r,
+            name = os.path.split(output_folder)[-1]
+            json.dump({"name": name, "type": str(type(self)), "str": str(self).replace("\n", ""), "reward": r,
                        "batch_size": batch_size, "summary": net_summary}, file, indent=True)
 
     ''' save net weights (remark: only weights are saved here, not the network structure!) '''

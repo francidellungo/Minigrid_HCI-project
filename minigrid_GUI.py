@@ -4,7 +4,7 @@ from PyQt5.QtGui import QIcon, QPixmap, QMovie
 from PyQt5.QtCore import QByteArray, QTimer
 # from Ui_mainWindow import Ui_MainWindow
 
-from Ui_minigrid import Ui_MainWindow
+#from Ui_minigrid import Ui_MainWindow
 from Ui_newGame import Ui_new_game_Dialog
 from Ui_main_scrollbar import Ui_MainWindow
 
