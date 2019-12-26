@@ -81,14 +81,14 @@ class MainWindow(QMainWindow):
         super().__init__()
         self.initUI()
 
-        print(len(os.listdir(os.path.join(games_path, env))))   # dir is your directory path
+        print(len(os.listdir(os.path.join(games_path, env))))
 
         # movie = QMovie('image/example.gif', QByteArray())
         # self.ui.image_1.setMovie(movie)
         # movie.start()
 
-        # pixmap = QPixmap('games/MiniGrid-Empty-6x6-v0/2019-12-11_13:40:14/game1.png')
-        # self.ui.image_1.setPixmap(pixmap)
+        pixmap = QPixmap('games/MiniGrid-Empty-6x6-v0/2019-12-11_13:40:14/game1.png')
+        self.ui.image_1.setPixmap(pixmap)
 
         # connect button New Game
 
@@ -108,10 +108,12 @@ class MainWindow(QMainWindow):
         """
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
-        # self.ui.pushButton_6.setMinimumHeight(28)
         self.new_game_Dialog = NewGame()
         self.ui.new_game_pb.clicked.connect(lambda: self.add_row('row1'))
 
+        for traj_idx, traj in enumerate(os.listdir(os.path.join(games_path, env))):
+            # print(traj)
+            self.add_row('game '+str(traj_idx))
 
         # list of image labels
         # TODO remove later
@@ -137,7 +139,7 @@ class MainWindow(QMainWindow):
         """
         image = path_of_image + str(count) + '.png'
         pixmap = QPixmap(image)
-        print('new image : ' + image + ' ' + str(pixmap.isNull()))
+        # print('new image : ' + image + ' ' + str(pixmap.isNull()))
 
         # if not pixmap.isNull():
         self.count = self.count + 1
@@ -153,14 +155,19 @@ class MainWindow(QMainWindow):
         """
         # TODO extend so that it can be used both for new trajectories and for ranking
         horiz = QHBoxLayout()
-        label = QLabel(name)
-        info_button = QPushButton('info')
-        move_button = QPushButton('->')
+        horiz.addWidget(QLabel(name))
+        count = 0
+        # pixmap = QPixmap(path_of_image + '0' + '.png')
+        pixmap = QPixmap('games/MiniGrid-Empty-6x6-v0/2019-12-11_13:40:14/game1.png')
+        # print(path_of_image + '0' + '.png')
+        label = QLabel()
+        label.setPixmap(pixmap)
         horiz.addWidget(label)
-        horiz.addWidget(info_button)
-        horiz.addWidget(move_button)
+        horiz.addWidget(QPushButton('info'))
+        horiz.addWidget(QPushButton('->'))
 
         self.ui.verticalLayout_2.addLayout(horiz)
+        # self.update_image(0)
 
 class NewGame(QDialog):
     def __init__(self, **kwargs):
