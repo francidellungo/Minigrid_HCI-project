@@ -108,6 +108,9 @@ class MainWindow(QMainWindow):
         """
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
+        # set window title (env name) TODO pass it as argument
+        self.setWindowTitle(env)
+
         self.new_game_Dialog = NewGame()
         self.ui.new_game_pb.clicked.connect(lambda: self.add_row('row1'))
 
