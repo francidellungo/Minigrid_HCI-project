@@ -45,7 +45,7 @@ class PolicyNet(nn.Module):
         tensorboard = SummaryWriter(tb_path)
 
         ''' save info about this training in training.json, and also save the structure of the network '''
-        self.save_training_details(output_folder, reward, batch_size)
+        self.save_training_details(output_folder, reward, batch_size, episodes)
         torch.save(self, os.path.join(output_folder, "net.pth"))
 
         ''' init metrics '''
@@ -192,7 +192,7 @@ class PolicyNet(nn.Module):
             return states, actions, true_rewards, rewards, discounted_rewards, step
 
     ''' save net and training details in training.json '''
-    def save_training_details(self, output_folder, reward, batch_size):
+    def save_training_details(self, output_folder, reward, batch_size, episodes):
         if not os.path.exists(output_folder):
             os.makedirs(output_folder)
 
@@ -205,7 +205,7 @@ class PolicyNet(nn.Module):
             print(net_summary)
             name = os.path.split(output_folder)[-1]
             json.dump({"name": name, "type": str(type(self)), "str": str(self).replace("\n", ""), "reward": r,
-                       "batch_size": batch_size, "summary": net_summary}, file, indent=True)
+                       "batch_size": batch_size, "max_episodes": episodes, "summary": net_summary}, file, indent=True)
 
     ''' save net weights (remark: only weights are saved here, not the network structure!) '''
     def save_checkpoint(self, episode, output_folder):

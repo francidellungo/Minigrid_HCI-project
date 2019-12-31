@@ -115,5 +115,5 @@ class Ui_Agent(object):
         Agent.setWindowTitle(_translate("Agent", "MainWindow"))
         self.labelStatus.setText(_translate("Agent", "Status: training"))
         self.labelLoading.setText(_translate("Agent", "x"))
-        self.progressBarTraining.setFormat(_translate("Agent", "%p/%m"))
+        self.progressBarTraining.setFormat(_translate("Agent", "%v/%m"))
         self.btnDeleteAgent.setText(_translate("Agent", "Delete agent"))

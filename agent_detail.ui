@@ -74,7 +74,7 @@
             <number>24</number>
            </property>
            <property name="format">
-            <string>%p/%m</string>
+            <string>%v/%m</string>
            </property>
           </widget>
          </item>
