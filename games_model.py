@@ -40,10 +40,8 @@ class GamesModel(QObject):
         :return:
         """
         new_game = {'name': name, 'folder_name': None, 'list': 'games'}
-        # new_game.name('ciao')
         self.new_game_s.emit(env, name, new_game['folder_name'])
         self.games.append(new_game)
-        # TODO fix number n_games : incremented even if game not saved
         self.n_games += 1
         # minigrid play game
 
@@ -70,7 +68,10 @@ class GamesModel(QObject):
         """
         # TODO are you sure you want to delete?
         self.game_removed.emit(current_list, game_idx)
-        return current_list.pop(game_idx)
+        if current_list == 'games':
+            return self.games.pop(game_idx)
+        else:
+            return self.ranked_games.pop(game_idx)
 
     def move_up(self, game_idx):
         # move element up in the rank list
@@ -105,5 +106,19 @@ class GamesModel(QObject):
     # def name(self, name_):
     #     self.name = name_
 
+
+# class GamesList(list):
+#     def __init__(self):
+#         super().__init__()
+#
+#     def append(self, object: _T) -> None:
+#         super().append(object)
+#
+#     def pop(self, index: int = ...) -> _T:
+#         return super().pop(index)
+#
+#     def remove(self, object: _T) -> None:
+#         super().remove(object)
+#
 
 

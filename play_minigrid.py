@@ -17,10 +17,11 @@ game_name = None
 game_info = {
     'name': game_name,
     'trajectory': [],
+    'rewards': None,
     'score': None,
-    'to_cancel': False
+    'to_delete': False
 }
-# to cancel == True if the trajectory is deleted from the player (useful for the graphical interface)
+# to delete == True if the trajectory is deleted from the player (useful for the graphical interface)
 game_directory = None
 screenshots = []
 
@@ -55,7 +56,8 @@ def reset_env(env):
         'name': game_name,
         'trajectory': [state_filter(state).tolist()],
         'rewards': [0],
-        'score': None
+        'score': None,
+        'to_delete': False
     }
 
     game_directory = os.path.join(games_path, options.env_name, str(game_name))

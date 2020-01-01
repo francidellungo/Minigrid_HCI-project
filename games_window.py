@@ -4,7 +4,7 @@ import os
 from PyQt5.QtGui import QPixmap
 from PyQt5.QtWidgets import QApplication, QMainWindow, QDialog, QLabel, QPushButton, QHBoxLayout
 from games_model import GamesModel
-# from games_view import GamesView
+from games_view import GamesView
 from Ui_scrollbar_v2 import Ui_MainWindow
 from Ui_newGame import Ui_new_game_Dialog
 from play_minigrid import main
@@ -24,47 +24,46 @@ class MainWindow(QMainWindow):
         self.model = GamesModel(env)
 
         # view (gui)
-        self.ui = Ui_MainWindow()
-        self.ui.setupUi(self)
-        self.initUI(env)
+        self.view = GamesView(env_used)
+        self.view.show()
 
         # gui for new game
-        self.new_game_Dialog = NewGame()
+        self.new_game_view_Dialog = NewGameView()
 
         # connect model signals to slots
-        # self.model.new_game_s.connect(self.create_new_game)
-        self.model.new_game_s.connect(self.add_row)
+        self.model.new_game_s.connect(self.view.add_row)
 
-        self.model.game_removed.connect(self.remove_game_from_gui)
-        self.model.game_moved.connect(self.move_game_gui)
+        self.model.game_removed.connect(self.view.remove_game_from_gui)
+        self.model.game_moved.connect(self.view.move_game_gui)
 
-        self.model.moved_up.connect(self.move_game_up_gui)
-        self.model.moved_down.connect(self.move_game_down_gui)
+        self.model.moved_up.connect(self.view.move_game_up_gui)
+        self.model.moved_down.connect(self.view.move_game_down_gui)
 
-        # connect buttons events to slots
+        # connect buttons events to slots (without view)
         # self.ui.new_game_pb.clicked.connect(lambda: self.model.new_game(env_used, 'game ' + str(self.model.n_games)))
 
-        # maybe do this:
-        self.ui.new_game_pb.clicked.connect(lambda: self.create_new_game(env_used, 'game ' + str(self.model.n_games)))
+        # connect buttons events to slots
+        self.view.ui.new_game_pb.clicked.connect(lambda: self.create_new_game(env_used, 'game ' + str(self.model.n_games)))
+        self.view.ui.remove_game_pb.clicked.connect(lambda: self.model.remove_game('games', 0))
 
-
-    def initUI(self, env):
-        """
-         Main window initialization
-        :param env: current environment used
-        :return:
-        """
-        # self.ui = Ui_MainWindow()
-        # self.ui.setupUi(self)
-        # set window title (env name)
-        self.setWindowTitle(env)
-
-        # self.new_game_Dialog = NewGame()
-        # self.ui.new_game_pb.clicked.connect(lambda: self.add_row('row1'))
-
-        for traj_idx, traj in enumerate(os.listdir(os.path.join(games_path, env))):
-            # print(traj)
-            self.add_row(env, 'game ' + str(traj_idx), traj)
+    # DELETE
+    # def initUI(self, env):
+    #     """
+    #      Main window initialization
+    #     :param env: current environment used
+    #     :return:
+    #     """
+    #     # self.ui = Ui_MainWindow()
+    #     # self.ui.setupUi(self)
+    #     # set window title (env name)
+    #     self.setWindowTitle(env)
+    #
+    #     # self.new_game_Dialog = NewGame()
+    #     # self.ui.new_game_pb.clicked.connect(lambda: self.add_row('row1'))
+    #
+    #     for traj_idx, traj in enumerate(os.listdir(os.path.join(games_path, env))):
+    #         # print(traj)
+    #         self.add_row(env, 'game ' + str(traj_idx), traj)
 
     def create_new_game(self, env, name):
         """
@@ -81,52 +80,40 @@ class MainWindow(QMainWindow):
         # save game
         # close
 
-        save = self.new_game_Dialog.exec_()
+        save = self.new_game_view_Dialog.exec_()
         # TODO: folder = ...
         if save:
             self.model.new_game(env, 'game ' + str(self.model.n_games))
             # self.add_row(env, name, folder_name)
 
-    def add_row(self, env, name, folder_name):
-        """
-        add row for a new game to games gui
-        :param env: current environment used
-        :param name: name for the new game
-        :param folder_name: name of the new game folder
-        :return:
-        """
-        horiz = QHBoxLayout()
-        horiz.addWidget(QLabel(name))
-        # count = 0
-        img1_path = [elem for elem in os.listdir(os.path.join(games_path, env, folder_name)) if elem.endswith(".png")]
-        img1_path.sort()
-        img_path = os.path.join(games_path, env, folder_name, 'game1.png')
-        # print(img_path)
-        pixmap = QPixmap(os.path.join(games_path, env, folder_name, 'game1.png'))
-        # print(path_of_image + '0' + '.png')
-        label = QLabel()
-        label.setPixmap(pixmap)
-        horiz.addWidget(label)
-        horiz.addWidget(QPushButton('info'))
-        horiz.addWidget(QPushButton('->'))
-
-        self.ui.verticalLayout_2.addLayout(horiz)
-        pass
-
-    def remove_game_from_gui(self, current_list, game_idx):
-        pass
-
-    def move_game_gui(self, starting_list, game_idx_start_list):
-        pass
-
-    def move_game_up_gui(self, game_idx):
-        pass
-
-    def move_game_down_gui(self, game_idx):
-        pass
+    # def add_row(self, env, name, folder_name):
+    #     """
+    #     add row for a new game to games gui
+    #     :param env: current environment used
+    #     :param name: name for the new game
+    #     :param folder_name: name of the new game folder
+    #     :return:
+    #     """
+    #     horiz = QHBoxLayout()
+    #     horiz.addWidget(QLabel(name))
+    #     # count = 0
+    #     img1_path = [elem for elem in os.listdir(os.path.join(games_path, env, folder_name)) if elem.endswith(".png")]
+    #     img1_path.sort()
+    #     img_path = os.path.join(games_path, env, folder_name, 'game1.png')
+    #     # print(img_path)
+    #     pixmap = QPixmap(os.path.join(games_path, env, folder_name, 'game1.png'))
+    #     # print(path_of_image + '0' + '.png')
+    #     label = QLabel()
+    #     label.setPixmap(pixmap)
+    #     horiz.addWidget(label)
+    #     horiz.addWidget(QPushButton('info'))
+    #     horiz.addWidget(QPushButton('->'))
+    #
+    #     self.view.ui.verticalLayout_2.addLayout(horiz)
+    #     pass
 
 
-class NewGame(QDialog):
+class NewGameView(QDialog):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.ui = Ui_new_game_Dialog()
@@ -136,5 +123,5 @@ class NewGame(QDialog):
 if __name__ == '__main__':
     app = QApplication(sys.argv)
     window = MainWindow(env_used)
-    window.show()
+    # window.show()
     sys.exit(app.exec_())
