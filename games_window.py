@@ -1,4 +1,6 @@
+from datetime import datetime
 import sys
+import gym
 import os
 
 from PyQt5.QtGui import QPixmap
@@ -8,6 +10,7 @@ from games_view import GamesView
 from Ui_scrollbar_v2 import Ui_MainWindow
 from Ui_newGame import Ui_new_game_Dialog
 from play_minigrid import main
+from play_minigrid_one import *
 
 env_used = 'MiniGrid-Empty-6x6-v0'
 games_path = 'games'
@@ -26,7 +29,7 @@ class MainWindow:
         self.view.show()
 
         # gui for new game
-        self.new_game_view_Dialog = NewGameView()
+        self.new_game_view_Dialog = NewGameView(env)
 
         # connect model signals to slots
         self.model.new_game_s.connect(self.view.add_row)
@@ -64,7 +67,6 @@ class MainWindow:
         #     print(item.indexOf(item.layout().itemAt(2).widget()))
         #     # .clicked.connect(lambda: self.model.remove_game('games', i))
 
-
     # DELETE
     # def initUI(self, env):
     #     """
@@ -84,7 +86,6 @@ class MainWindow:
     #         # print(traj)
     #         self.add_row(env, 'game ' + str(traj_idx), traj)
 
-
     def create_new_game(self, env, name):
         """
         creation of a new game
@@ -100,11 +101,12 @@ class MainWindow:
         # save game
         # close
 
-        save = self.new_game_view_Dialog.exec_()
+        self.new_game_view_Dialog.play_new_game(env )
+
         # TODO: folder = ...
-        if save:
-            self.model.new_game( env, 'game ' + str(self.model.n_games))
-            # self.add_row(env, name, folder_name)
+        # if save:
+        #     self.model.new_game(env, 'game ' + str(self.model.n_games))
+        #     # self.add_row(env, name, folder_name)
 
     # def add_row(self, env, name, folder_name):
     #     """
@@ -132,14 +134,67 @@ class MainWindow:
     #     self.view.ui.verticalLayout_2.addLayout(horiz)
     #     pass
 
-    def print_(self):
-        print('funziona')
 
 class NewGameView(QDialog):
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
+    def __init__(self, environment):
+        super().__init__()
         self.ui = Ui_new_game_Dialog()
         self.ui.setupUi(self)
+        self.env = gym.make(environment)
+
+    def play_new_game(self, environment):
+        # minigrid_play_one(env)
+        game_label = self.ui.game_label
+        state, game_directory, pixmap = self.reset_env(self.env)
+        pixmap = self.env.render('pixmap')
+        game_label.setPixmap(pixmap)
+        pixmap.window.setKeyDownCb(keyDownCb)
+        done = False
+        while not done:
+            self.env.render('pixmap')
+
+            if pixmap.window is None:
+                break
+
+
+
+    def state_filter(self, state):
+        return state['image'][:, :, 0]
+
+    def reset_env(self, env):
+        """
+        reset the environment, initialize game_name, game_info and directory
+
+        :param env: gym environment used
+        :return:
+        """
+        global game_name, game_info, game_directory, screenshots
+        state = self.env.reset()
+        self.env.render()
+        if hasattr(self.env, 'mission'):
+            print('Mission: %s' % self.env.mission)
+
+        # Get timestamp to identify this game
+        game_name = datetime.now().strftime("%Y-%m-%d_%H:%M:%S")
+        print('New game: ', game_name)
+
+        # Dictionary for game information
+        game_info = {
+            'name': game_name,
+            'trajectory': [self.state_filter(state).tolist()],
+            'rewards': [0],
+            'score': None,
+            'to_delete': False
+        }
+        # TODO: fix all
+        game_directory = os.path.join(games_path, self.env, str(game_name))
+
+        screenshot_file = 'game' + str(self.env.step_count) + '.png'
+        pixmap = self.env.render('pixmap')
+        screenshots = [(screenshot_file, pixmap)]
+
+        return state, game_directory, pixmap
+
 
 
 if __name__ == '__main__':

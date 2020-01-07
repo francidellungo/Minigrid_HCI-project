@@ -70,31 +70,30 @@ def reset_env(env):
     return state
 
 
-def act_action(env, action, one_game = False):
+def act_action(env, action):
     """
     calculate new state (obs), save image of the state and if finished reset the environment
-
     :param env: gym environment used
     :param action: action taken
     :return:
     """
     global game_directory
-    if action == env.actions.done:
-        done = True
-    else:
-        obs, reward, done, info = env.step(action)
-        print("state: ", state_filter(obs))
+    # if action == env.actions.done:
+    #     done = True
+    # else:
+    obs, reward, done, info = env.step(action)
+    print("state: ", state_filter(obs))
 
-        # Save state
-        game_info['trajectory'].append(state_filter(obs).tolist())
-        game_info['rewards'].append(reward)
+    # Save state
+    game_info['trajectory'].append(state_filter(obs).tolist())
+    game_info['rewards'].append(reward)
 
-        print('step=%s, reward=%.2f' % (env.step_count, reward))
+    print('step=%s, reward=%.2f' % (env.step_count, reward))
 
-        # Save screenshots
-        screenshot_file = 'game' + str(env.step_count) + '.png'
-        pixmap = env.render('pixmap')
-        screenshots.append((screenshot_file, pixmap))
+    # Save screenshots
+    screenshot_file = 'game' + str(env.step_count) + '.png'
+    pixmap = env.render('pixmap')
+    screenshots.append((screenshot_file, pixmap))
 
     if done:
         # Save images and json
@@ -116,11 +115,9 @@ def act_action(env, action, one_game = False):
             json.dump(game_info, game_file, ensure_ascii=False)
 
         print('done!', len(game_info['trajectory']))
-        if not one_game:
-            obs = reset_env(env)
-        elif one_game:
-            sys.exit(0)
-            # TODO change
+
+        sys.exit(0)
+        # TODO change
 
     if action == env.actions.done:
         return obs, None, True, None
@@ -131,10 +128,6 @@ def keyDownCb(keyName):
 
         if keyName == 'ESCAPE':
             sys.exit(0)
-
-        if options.policy_net is not None:
-            # controls are disabled if human user isn't playing
-            return
 
         if keyName == 'BACKSPACE':
             reset_env(env)
@@ -156,17 +149,17 @@ def keyDownCb(keyName):
         elif keyName == 'PAGE_DOWN':
             action = env.actions.drop
 
-        elif keyName == 'RETURN':
-            action = env.actions.done
-            #action = 'exit_game'
+        # elif keyName == 'RETURN':
+        #     action = env.actions.done
+        #     #action = 'exit_game'
 
         # Screenshot functionality
-        elif keyName == 'ALT':
-            screen_path = options.env_name + '.png'
-            print('saving screenshot "{}"'.format(screen_path))
-            pixmap = env.render('pixmap')
-            pixmap.save(screen_path)
-            return
+        # elif keyName == 'ALT':
+        #     screen_path = options.env_name + '.png'
+        #     print('saving screenshot "{}"'.format(screen_path))
+        #     pixmap = env.render('pixmap')
+        #     pixmap.save(screen_path)
+        #     return
 
         else:
             print("unknown key %s" % keyName)
@@ -174,92 +167,10 @@ def keyDownCb(keyName):
 
         # Update state
         # act_action(env, action)
-        if one_game:
-            act_action(env, action, True)
-        else:
-            act_action(env, action)
-
-def main():
-    global one_game
-    one_game = False
-
-    global game_name, game_info, options, env, device
-    parser = OptionParser()
-    parser.add_option(
-        "-e",
-        "--env-name",
-        dest="env_name",
-        help="gym environment to load",
-        default='MiniGrid-Empty-6x6-v0'
-    )
-    parser.add_option(
-        "-n",
-        "--num-episodes",
-        dest="num_episodes",
-        help="max number of episodes to play (only valid for non-human player)",
-        default=-1
-    )
-    parser.add_option(
-        "-p",
-        "--policy",
-        dest="policy_net",
-        help="policy net to use as agent. Default: no policy, the user is the agent",
-        default=None
-    )
-    (options, args) = parser.parse_args()
-
-    # use GPU if available, otherwise use CPU
-    device = "cuda" if torch.cuda.is_available() else "cpu"
-
-    # Load the gym environment
-    env = gym.make(options.env_name)
-
-    state = reset_env(env)
-
-    # Create a window to render into
-    renderer = env.render('human')
-
-    # set controls
-    renderer.window.setKeyDownCb(keyDownCb)
-
-    if options.policy_net is not None:
-
-        if options.policy_net.endswith(".pth"):
-            # select specified weights
-            epoch_to_load_weights = options.policy_net.rsplit("-", 1)[1].split(".", 1)[0]
-            policy_net_dir = os.path.dirname(options.policy_net)
-        else:
-            # load the most recent weights from the specified folder
-            episodes_saved_weights = [int(state.rsplit("-", 1)[1].split(".", 1)[0]) for state in glob(os.path.join(options.policy_net, "policy_net-*.pth"))]
-            epoch_to_load_weights = max(episodes_saved_weights)
-            policy_net_dir = options.policy_net
-
-        agent = torch.load(os.path.join(policy_net_dir, "net.pth"))
-        agent.load_state_dict(torch.load(os.path.join(policy_net_dir, "policy_net-" + str(epoch_to_load_weights) + ".pth")))
-        agent = agent.to(device)
-
-    done = False
-    count = 0
-    while True:
-        env.render('human')
-
-        if done:
-            count += 1
-            if options.policy_net is not None and count >= int(options.num_episodes):
-                break
-
-        if options.policy_net is not None:
-            action = agent.sample_action(state_filter(state))
-            state, r, done, _ = act_action(env, action)
-
-        # If the window was closed
-        if renderer.window is None:
-            break
+        act_action(env, action)
 
 
-def minigrid_play_one():
-    global one_game
-    one_game = True
+def minigrid_play_one(env_used):
 
     global game_name, game_info, options, env, device
 
