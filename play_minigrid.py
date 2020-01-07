@@ -247,6 +247,82 @@ def main():
             break
 
 
+def minigrid_play_one():
+
+    global game_name, game_info, options, env, device
+    parser = OptionParser()
+    parser.add_option(
+        "-e",
+        "--env-name",
+        dest="env_name",
+        help="gym environment to load",
+        default='MiniGrid-Empty-6x6-v0'
+    )
+    parser.add_option(
+        "-n",
+        "--num-episodes",
+        dest="num_episodes",
+        help="max number of episodes to play (only valid for non-human player)",
+        default=-1
+    )
+    parser.add_option(
+        "-p",
+        "--policy",
+        dest="policy_net",
+        help="policy net to use as agent. Default: no policy, the user is the agent",
+        default=None
+    )
+    (options, args) = parser.parse_args()
+
+    # use GPU if available, otherwise use CPU
+    device = "cuda" if torch.cuda.is_available() else "cpu"
+
+    # Load the gym environment
+    env = gym.make(options.env_name)
+
+    state = reset_env(env)
+
+    # Create a window to render into
+    renderer = env.render('human')
+
+    # set controls
+    renderer.window.setKeyDownCb(keyDownCb)
+
+    if options.policy_net is not None:
+
+        if options.policy_net.endswith(".pth"):
+            # select specified weights
+            epoch_to_load_weights = options.policy_net.rsplit("-", 1)[1].split(".", 1)[0]
+            policy_net_dir = os.path.dirname(options.policy_net)
+        else:
+            # load the most recent weights from the specified folder
+            episodes_saved_weights = [int(state.rsplit("-", 1)[1].split(".", 1)[0]) for state in glob(os.path.join(options.policy_net, "policy_net-*.pth"))]
+            epoch_to_load_weights = max(episodes_saved_weights)
+            policy_net_dir = options.policy_net
+
+        agent = torch.load(os.path.join(policy_net_dir, "net.pth"))
+        agent.load_state_dict(torch.load(os.path.join(policy_net_dir, "policy_net-" + str(epoch_to_load_weights) + ".pth")))
+        agent = agent.to(device)
+
+    done = False
+    count = 0
+    while not done:
+
+        env.render('human')
+        # if done:
+        #     count += 1
+        #     if options.policy_net is not None and count >= int(options.num_episodes):
+        #         break
+        #
+        # if options.policy_net is not None:
+        #     action = agent.sample_action(state_filter(state))
+        #     state, r, done, _ = act_action(env, action)
+
+        # If the window was closed
+        if renderer.window is None:
+            break
+
+
 if __name__ == "__main__":
-    main()
+    minigrid_play_one()
 

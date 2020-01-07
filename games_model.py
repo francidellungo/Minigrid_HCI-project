@@ -8,7 +8,7 @@ games_path = 'games'
 
 class GamesModel(QObject):
 
-    new_game_s = pyqtSignal(str, str, str)
+    new_game_s = pyqtSignal(str, str, str)  # TODO fix
     game_removed = pyqtSignal(str, int)
     game_moved = pyqtSignal(str, int)
 
@@ -52,8 +52,9 @@ class GamesModel(QObject):
         :param game_idx: index of the element in the current list
         :return:
         """
+        source_list = self.games if current_list == 'games' else self.ranked_games
         dest_list = self.ranked_games if current_list == 'games' else self.games
-        game = current_list.pop(game_idx)
+        game = source_list.pop(game_idx)
         dest_list.append(game)
         self.game_moved.emit(current_list, game_idx)
 
@@ -68,9 +69,12 @@ class GamesModel(QObject):
         """
         # TODO are you sure you want to delete?
         self.game_removed.emit(current_list, game_idx)
+
         if current_list == 'games':
+            print(game_idx, len(self.games))
             return self.games.pop(game_idx)
         else:
+            print(game_idx, len(self.ranked_games))
             return self.ranked_games.pop(game_idx)
 
     def move_up(self, game_idx):
