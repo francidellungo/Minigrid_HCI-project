@@ -58,7 +58,7 @@
         <property name="widgetResizable">
          <bool>true</bool>
         </property>
-        <widget class="QWidget" name="games_verticalLayout">
+        <widget class="QWidget" name="games_verticalW">
          <property name="geometry">
           <rect>
            <x>0</x>
@@ -67,7 +67,7 @@
            <height>534</height>
           </rect>
          </property>
-         <layout class="QVBoxLayout" name="verticalLayout_2">
+         <layout class="QVBoxLayout" name="games_verticalLayout">
           <item>
            <layout class="QHBoxLayout" name="horizontalLayout_game1">
             <item>
@@ -88,6 +88,13 @@
              <widget class="QPushButton" name="info_1">
               <property name="text">
                <string>info</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QPushButton" name="remove_game_pb">
+              <property name="text">
+               <string>remove</string>
               </property>
              </widget>
             </item>
@@ -147,7 +154,7 @@
         <property name="widgetResizable">
          <bool>true</bool>
         </property>
-        <widget class="QWidget" name="ranking_verticalLayout">
+        <widget class="QWidget" name="ranking_verticalW">
          <property name="geometry">
           <rect>
            <x>0</x>
@@ -156,7 +163,7 @@
            <height>534</height>
           </rect>
          </property>
-         <layout class="QVBoxLayout" name="verticalLayout_3">
+         <layout class="QVBoxLayout" name="ranking_verticalLayout">
           <item>
            <layout class="QHBoxLayout" name="horizontalLayout_4">
             <item>
