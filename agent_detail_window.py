@@ -57,7 +57,7 @@ class AgentDetailWindow(QMainWindow):
     def delete(self):
         reply = QMessageBox.question(self, "Delete agent", "Are you sure to delete this agent?", QMessageBox.Yes | QMessageBox.No)
         if reply == QMessageBox.Yes:
-            print("deleting: " + self.agents_model.agents[self.environment][self.agent_name]["path"])
+            print("deleting: " + self.agents_model.get_agent(self.environment, self.agent_name)["path"])
             self.agents_model.delete_agent(self.environment, self.agent_name)
             print("successfully deleted")
             self.close()

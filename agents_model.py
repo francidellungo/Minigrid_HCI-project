@@ -103,6 +103,7 @@ class AgentsModel(QObject):
             return False
         agent = self._agents[environment].pop(agent_key)
         shutil.rmtree(agent["path"], ignore_errors=True)
+        self.agent_deleted.emit(environment, agent_key)
         return True
 
     def get_agent(self, environment, agent_name):

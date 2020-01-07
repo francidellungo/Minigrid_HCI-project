@@ -125,7 +125,7 @@ class AgentsWindow(QMainWindow):
         btn_info.clicked.connect(lambda _, env=environment, ag=agent : self.info_click_slot(env, ag))
 
         # add widgets to row
-        row = QWidget()
+        row = QWidget(env_tab_widget)
         horiz_layout = QHBoxLayout(row)
         horiz_layout.addWidget(label_loading)
         horiz_layout.addWidget(label_name)
@@ -166,16 +166,12 @@ class AgentsWindow(QMainWindow):
         # TODO testare se funziona
         env_tab_widget = self.ui.environments_tabs.findChild(QWidget, environment + "-env_tab_widget")
         scroll_area_content_layout = env_tab_widget.findChild(QLayout, environment + "-scroll_area_content_layout")
-        row = env_tab_widget.findChild(QHBoxLayout, environment + "-" + agent_key + "-row")
+        row = env_tab_widget.findChild(QWidget, environment + "-" + agent_key + "-row")
         scroll_area_content_layout.removeWidget(row)
 
         self.agents_number[environment] -= 1
         if self.agents_number[environment] == 0:
             self.ui.environments_tabs.findChild(QPushButton, environment + "-btn_delete").setVisible(True)
-
-    def add_environment_slot(self):
-        # TODO implementare
-        pass
 
     def info_click_slot(self, environment, agent):
         #self.setEnabled(False)
