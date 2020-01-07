@@ -1,5 +1,6 @@
 import json
 import os
+import shutil
 
 from PyQt5.QtCore import QObject, pyqtSignal, pyqtSlot, pyqtProperty
 
@@ -12,11 +13,12 @@ class AgentsModel(QObject):
     environment_deleted = pyqtSignal(str)
 
     agent_added = pyqtSignal(str, str)  # TODO cambiare
+    agent_updated = pyqtSignal(str, str)
     agent_deleted = pyqtSignal(str, str)  # TODO cambiare
 
     def __init__(self):
         super().__init__(parent=None)
-        self.agents = {}
+        self._agents = {}
         self.load_from_disk()
 
     def load_from_disk(self):
@@ -38,7 +40,7 @@ class AgentsModel(QObject):
                     continue
 
                 # env is a name (string) of an environment
-                if env not in self.agents:
+                if env not in self._agents:
                     self.add_environment(env)
                     #self.agents[env] = {}
                     #self.agents[env] = []
@@ -64,36 +66,45 @@ class AgentsModel(QObject):
         print("loaded {} agents from {} environments".format(agents_loaded, envs_loaded))
 
     def add_environment(self, environment: str) -> bool:
-        if environment in self.agents:
+        if environment in self._agents:
             return False
-        self.agents[environment] = {}
+        self._agents[environment] = {}
         self.environment_added.emit(environment)
         return True
 
     def pop_environment(self, environment: str):
-        if environment not in self.agents:
+        if environment not in self._agents:
             return False
-        env = self.agents.pop(environment)
+        env = self._agents.pop(environment)
         self.environment_deleted.emit(environment)
         return env
 
     def delete_environment(self, environment: str) -> bool:
-        if environment not in self.agents:
+        if environment not in self._agents:
             return False
         self.pop_environment(environment)
         return True
 
     def add_agent(self, environment: str, agent_key: str, agent_value) -> bool:
-        if environment not in self.agents or agent_key in self.agents[environment]: # TODO change
+        added = self.update_agent(environment, agent_key, agent_value)
+        if added:
+            self.agent_added.emit(environment, agent_key)
+        return added
+
+    def update_agent(self, environment: str, agent_key: str, agent_value) -> bool:
+        if environment not in self._agents or agent_key in self._agents[environment]: # TODO change
             return False
-        self.agents[environment][agent_key] = agent_value
-        self.agent_added.emit(environment, agent_key)
+        self._agents[environment][agent_key] = agent_value
+        self.agent_updated.emit(environment, agent_key)
         return True
 
     def delete_agent(self, environment: str, agent_key: str) -> bool:
-        if environment not in self.agents or agent_key not in self.agents[environment]:
+        if environment not in self._agents or agent_key not in self._agents[environment]:
             return False
-        agent = self.agents[environment].pop(agent_key)
-        os.rmdir(agent["path"])
+        agent = self._agents[environment].pop(agent_key)
+        shutil.rmtree(agent["path"], ignore_errors=True)
         return True
+
+    def get_agent(self, environment, agent_name):
+        return self._agents[environment][agent_name]
 
