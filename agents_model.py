@@ -1,3 +1,4 @@
+from datetime import datetime
 import json
 import os
 import shutil
@@ -5,6 +6,8 @@ import shutil
 from PyQt5.QtCore import QObject, pyqtSignal, pyqtSlot, pyqtProperty
 
 from policy_nets.base_policy_net import PolicyNet
+from train_policy_net import train_policy
+from train_reward_net import train_reward
 
 
 class AgentsModel(QObject):
@@ -42,8 +45,6 @@ class AgentsModel(QObject):
                 # env is a name (string) of an environment
                 if env not in self._agents:
                     self.add_environment(env)
-                    #self.agents[env] = {}
-                    #self.agents[env] = []
                     envs_loaded += 1
 
                 # for each trained policy (of this type and in this environment)
@@ -58,7 +59,6 @@ class AgentsModel(QObject):
                             j = json.load(file)
                         j["path"] = trained_policy_dir
                         self.add_agent(env, trained_policy, j)
-                        # self.agents[env][trained_policy]
                         agents_loaded += 1
                     except FileNotFoundError:
                         print("File not found: " + trained_policy_info)
@@ -85,7 +85,21 @@ class AgentsModel(QObject):
         self.pop_environment(environment)
         return True
 
-    def add_agent(self, environment: str, agent_key: str, agent_value) -> bool:
+    def create_agent(self, environment, games):
+        # TODO aggiungere parametro per specificare i games da usare per allenare la reward_net da usare per allenare la policy_net
+        print("Error: agents_model.create_agent not implemented yet")
+        # TODO finire di sistemare
+        train_reward(environment, games=games)
+        policy_net_key = datetime.now().strftime("%Y-%m-%d_%H:%M:%S")
+        train_policy(environment, policy_net_key=policy_net_key)
+        self.add_agent(environment, policy_net_key)
+        # TODO threads?
+
+
+    def add_agent(self, environment: str, agent_key: str, agent_value=None) -> bool:
+
+        # TODO gestire caso in cui agent_value=None
+
         added = self.update_agent(environment, agent_key, agent_value)
         if added:
             self.agent_added.emit(environment, agent_key)
@@ -108,4 +122,3 @@ class AgentsModel(QObject):
 
     def get_agent(self, environment, agent_name):
         return self._agents[environment][agent_name]
-

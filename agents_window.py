@@ -12,6 +12,7 @@ from PyQt5.QtWidgets import *
 from agent_detail_window import AgentDetailWindow
 from agents_model import AgentsModel
 from agents_ui import Ui_Agents
+from games_window import GamesController
 from utils import get_last_policy_episode, get_all_environments
 
 
@@ -22,6 +23,7 @@ class AgentsWindow(QMainWindow):
         self.agents_number = {}
 
         self.gif = None
+        self.sep = "^"
 
         # Keep a reference to the AgentDetailWindow
         self.agent_details_window = None
@@ -42,7 +44,7 @@ class AgentsWindow(QMainWindow):
         self.ui.environments_tabs.removeTab(0) # TODO remove
 
         # Connect the buttons events to slots
-        self.ui.btn_create.clicked.connect(lambda : self._model.add_agent("MiniGrid-Empty-6x6-v0", "Agent 1", {})) # TODO change
+        self.ui.btn_create.clicked.connect(self.create_agent_click_slot)
         # self.ui.btn_add_env.clicked.connect()
         # self.ui.btn_delete_env.clicked.connect()
 
@@ -54,6 +56,7 @@ class AgentsWindow(QMainWindow):
         self.btn_add_env = QPushButton("+")
         self.btn_add_env.clicked.connect(self.ask_for_new_environment)
         self.ui.environments_tabs.setCornerWidget(self.btn_add_env, Qt.TopRightCorner)
+
 
     def update_gui_from_model(self): # TODO rivedere
         for env in self._model._agents:
@@ -73,7 +76,7 @@ class AgentsWindow(QMainWindow):
 
         # create tab widget for this environment
         env_tab_widget = QWidget(self.ui.environments_tabs)     # setting the parent is useful to find later the object
-        env_tab_widget.setObjectName(environment + "-env_tab_widget")  # object name is useful to find later the object
+        env_tab_widget.setObjectName(environment + self.sep + "env_tab_widget")  # object name is useful to find later the object
         env_tab_widget.setSizePolicy(QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Preferred)
         env_tab_layout = QGridLayout(env_tab_widget)            # assign a grid layout to this widget
 
@@ -89,12 +92,12 @@ class AgentsWindow(QMainWindow):
 
         # assign a vertical layout to the content of the scroll area
         scroll_area_content_layout = QVBoxLayout(scroll_area_content_widget)
-        scroll_area_content_layout.setObjectName(environment + "-scroll_area_content_layout") # name is useful to find later the object
+        scroll_area_content_layout.setObjectName(environment + self.sep + "scroll_area_content_layout") # name is useful to find later the object
 
         # add delete environment button
         btn_delete = QPushButton("Delete this environment", env_tab_widget)
         btn_delete.clicked.connect(lambda _, env=environment: self.delete_environment_from_gui(env))
-        btn_delete.setObjectName(environment + "-btn_delete")
+        btn_delete.setObjectName(environment + self.sep + "btn_delete")
         scroll_area_content_layout.addWidget(btn_delete)
 
         # add the scroll area to the tab widget, and add the tab widget to the tabs
@@ -104,13 +107,13 @@ class AgentsWindow(QMainWindow):
         self.ui.environments_tabs.setCurrentIndex(len(self.ui.environments_tabs)-1)
 
     def delete_environment_from_gui(self, environment):
-        env_tab_widget = self.ui.environments_tabs.findChild(QWidget, environment + "-env_tab_widget")
+        env_tab_widget = self.ui.environments_tabs.findChild(QWidget, environment + self.sep + "env_tab_widget")
         index = self.ui.environments_tabs.indexOf(env_tab_widget)
         self.ui.environments_tabs.removeTab(index)
 
     def add_agent_to_gui(self, environment, agent):
-        env_tab_widget = self.ui.environments_tabs.findChild(QWidget, environment + "-env_tab_widget")
-        scroll_area_content_layout = env_tab_widget.findChild(QLayout, environment + "-scroll_area_content_layout")
+        env_tab_widget = self.ui.environments_tabs.findChild(QWidget, environment + self.sep + "env_tab_widget")
+        scroll_area_content_layout = env_tab_widget.findChild(QLayout, environment + self.sep + "scroll_area_content_layout")
 
         # create widgets for the new agent
         label_name = QLabel(agent)
@@ -119,7 +122,7 @@ class AgentsWindow(QMainWindow):
         label_loading = QLabel(env_tab_widget)
         label_loading.setAlignment(Qt.AlignRight)
         label_loading.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Fixed)
-        label_loading.setObjectName(environment + "-" + agent + "-label_loading")
+        label_loading.setObjectName(environment + self.sep + "" + agent + self.sep + "label_loading")
         btn_info = QPushButton("info")
         btn_info.setSizePolicy(QSizePolicy.Maximum, QSizePolicy.Fixed)
         btn_info.clicked.connect(lambda _, env=environment, ag=agent : self.info_click_slot(env, ag))
@@ -130,10 +133,10 @@ class AgentsWindow(QMainWindow):
         horiz_layout.addWidget(label_loading)
         horiz_layout.addWidget(label_name)
         horiz_layout.addWidget(btn_info)
-        row.setObjectName(environment + "-" + agent + "-row")
+        row.setObjectName(environment + self.sep + agent + self.sep + "row")
 
         # disable the delete button
-        env_tab_widget.findChild(QPushButton, environment + "-btn_delete").setVisible(False)
+        env_tab_widget.findChild(QPushButton, environment + self.sep + "btn_delete").setVisible(False)
 
         # add row to the scroll area
         scroll_area_content_layout.addWidget(row)
@@ -152,7 +155,8 @@ class AgentsWindow(QMainWindow):
         max_episodes = agent["max_episodes"]
         current_episode = get_last_policy_episode(agent["path"])
 
-        label_loading = self.ui.environments_tabs.findChild(QWidget, environment + "-env_tab_widget").findChild(QLabel, environment + "-" + agent_name + "-label_loading")
+        label_loading = self.ui.environments_tabs.findChild(QWidget, environment + self.sep + "env_tab_widget").\
+            findChild(QLabel, environment + self.sep + agent_name + self.sep + "label_loading")
 
         if current_episode is not None and current_episode + 1 == max_episodes: # +1 is used because episode count starts from 0
             label_loading.setMovie(None)
@@ -163,15 +167,14 @@ class AgentsWindow(QMainWindow):
             label_loading.setMovie(self.gif)
 
     def delete_agent_from_gui(self, environment, agent_key):
-        # TODO testare se funziona
-        env_tab_widget = self.ui.environments_tabs.findChild(QWidget, environment + "-env_tab_widget")
-        scroll_area_content_layout = env_tab_widget.findChild(QLayout, environment + "-scroll_area_content_layout")
-        row = env_tab_widget.findChild(QWidget, environment + "-" + agent_key + "-row")
+        env_tab_widget = self.ui.environments_tabs.findChild(QWidget, environment + self.sep + "env_tab_widget")
+        scroll_area_content_layout = env_tab_widget.findChild(QLayout, environment + self.sep + "scroll_area_content_layout")
+        row = env_tab_widget.findChild(QWidget, environment + self.sep + agent_key + self.sep + "row")
         scroll_area_content_layout.removeWidget(row)
 
         self.agents_number[environment] -= 1
         if self.agents_number[environment] == 0:
-            self.ui.environments_tabs.findChild(QPushButton, environment + "-btn_delete").setVisible(True)
+            self.ui.environments_tabs.findChild(QPushButton, environment + self.sep + "btn_delete").setVisible(True)
 
     def info_click_slot(self, environment, agent):
         #self.setEnabled(False)
@@ -184,10 +187,9 @@ class AgentsWindow(QMainWindow):
             self.agent_details_window = AgentDetailWindow(self._model, environment, agent)
         self.agent_details_window.show()
 
-    def delete_env_click_slot(self):
-        # TODO implementare
-        pass
-
+    def create_agent_click_slot(self):
+        environment = self.ui.environments_tabs.currentWidget().objectName().split(self.sep)[0]
+        self.games = GamesController(environment, self._model)
 
 if __name__== "__main__":
     app = QApplication(sys.argv)
