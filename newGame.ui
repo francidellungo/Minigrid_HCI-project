@@ -41,8 +41,11 @@
    <bool>false</bool>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout_2">
-   <item>
+   <item alignment="Qt::AlignHCenter|Qt::AlignVCenter">
     <widget class="QLabel" name="game_label">
+     <property name="frameShape">
+      <enum>QFrame::NoFrame</enum>
+     </property>
      <property name="text">
       <string>image game </string>
      </property>
