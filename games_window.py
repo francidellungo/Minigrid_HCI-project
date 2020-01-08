@@ -3,7 +3,9 @@ import sys
 import gym
 import os
 
+from PyQt5 import QtGui, QtCore, QtWidgets
 from PyQt5.QtGui import QPixmap
+from PyQt5.QtCore import Qt, pyqtSignal
 from PyQt5.QtWidgets import QApplication, QMainWindow, QDialog, QLabel, QPushButton, QHBoxLayout
 from games_model import GamesModel
 from games_view import GamesView
@@ -29,7 +31,7 @@ class MainWindow:
         self.view.show()
 
         # gui for new game
-        self.new_game_view_Dialog = NewGameView(env)
+        # self.new_game_view_Dialog = NewGameView(env)
 
         # connect model signals to slots
         self.model.new_game_s.connect(self.view.add_row)
@@ -45,68 +47,26 @@ class MainWindow:
         # self.ui.new_game_pb.clicked.connect(lambda: self.model.new_game(env_used, 'game ' + str(self.model.n_games)))
 
         # connect buttons events to slots
-        self.view.ui.new_game_pb.clicked.connect(lambda: self.create_new_game(env_used, 'game ' + str(self.model.n_games)))
+        self.view.ui.new_game_pb.clicked.connect(lambda: self.create_new_game(env))
         # self.view.ui.remove_game_pb.clicked.connect(lambda: self.model.remove_game('games', 0))
 
-        # self.view.ui.games_verticalLayout.itemAt(2).layout().itemAt(4).widget().clicked.connect(lambda: self.view.move_game_gui('games', 2))
-
-        # connect delete btns for games list
-        # games_items = self.view.get_items_in_list('games')
-        # for item in games_items:
-        #     item.layout().itemAt(4).widget().clicked.connect(lambda: self.model.move_game('games', 0))
-            # item.layout().indexOf(5)
-            # .clicked.connect(self.model.move_game('games', 0))
-
-        # for i, item in enumerate(games_items):
-        #     # print(i)
-        #     # print(type(item.layout()))
-        #     print(type(item.layout().itemAt(3)))
-        #     item.layout().itemAt(3).widget().clicked.connect(lambda: self.model.remove_game('games', i))
-        #     # print(self.view.ui.games_verticalLayout.indexOf(item.widget()))
-        #     print(self.view.ui.games_verticalLayout.indexOf(item.widget()))
-        #     print(item.indexOf(item.layout().itemAt(2).widget()))
-        #     # .clicked.connect(lambda: self.model.remove_game('games', i))
-
-    # DELETE
-    # def initUI(self, env):
-    #     """
-    #      Main window initialization
-    #     :param env: current environment used
-    #     :return:
-    #     """
-    #     # self.ui = Ui_MainWindow()
-    #     # self.ui.setupUi(self)
-    #     # set window title (env name)
-    #     self.setWindowTitle(env)
-    #
-    #     # self.new_game_Dialog = NewGame()
-    #     # self.ui.new_game_pb.clicked.connect(lambda: self.add_row('row1'))
-    #
-    #     for traj_idx, traj in enumerate(os.listdir(os.path.join(games_path, env))):
-    #         # print(traj)
-    #         self.add_row(env, 'game ' + str(traj_idx), traj)
-
-    def create_new_game(self, env, name):
+    def create_new_game(self, env):
         """
         creation of a new game
         :param env: current environment used
         :param name: name for the new game (really needed?)
         :return:
         """
-        # TODO play minigrid
-        # main()
+        # TODO play minigrid to be fixed
+        # game_dir = open_newGame_dialog(env)
+        new_game_dialog = NewGameView(env)
+        new_game_dialog.play_new_game()
 
-        # open new game window _done_
-        # play
-        # save game
-        # close
-
-        self.new_game_view_Dialog.play_new_game(env )
-
-        # TODO: folder = ...
-        # if save:
-        #     self.model.new_game(env, 'game ' + str(self.model.n_games))
-        #     # self.add_row(env, name, folder_name)
+        if new_game_dialog.accept:
+            print('new game saved:', new_game_dialog.game_folder)
+            self.model.new_game(env, new_game_dialog.game_folder, 'game ' + str(self.model.n_games))
+        else:
+            print('not saved')
 
     # def add_row(self, env, name, folder_name):
     #     """
@@ -141,27 +101,186 @@ class NewGameView(QDialog):
         self.ui = Ui_new_game_Dialog()
         self.ui.setupUi(self)
         self.env = gym.make(environment)
+        self.env_name = environment
+        self.keyDownCb = None
+        self.done = False
+        self.game_folder = None
+        self.ui.game_buttonBox.button(QtWidgets.QDialogButtonBox.Save).setEnabled(False)
 
-    def play_new_game(self, environment):
-        # minigrid_play_one(env)
+    def accept(self) -> str:
+        print('accept event', self.game_folder)
+        self.close()
+        return self.game_folder
+
+    def setKeyDownCb(self, callback):
+        self.keyDownCb = callback
+
+    def keyPressEvent(self, e):
+        print('press ', self.keyDownCb is None, e.key())
+        if self.keyDownCb is None:
+            return
+
+        keyName = None
+        if e.key() == Qt.Key_4:
+            keyName = 'LEFT'
+            print('left')
+        elif e.key() == Qt.Key_6:
+            keyName = 'RIGHT'
+            print('right')
+        elif e.key() == Qt.Key_8:
+            keyName = 'UP'
+        elif e.key() == Qt.Key_2:
+            keyName = 'DOWN'
+        # elif e.key() == Qt.Key_Space:
+        #     keyName = 'SPACE'
+        # elif e.key() == Qt.Key_Return:
+        #     keyName = 'RETURN'
+        # elif e.key() == Qt.Key_Alt:
+        #     keyName = 'ALT'
+        # elif e.key() == Qt.Key_Control:
+        #     keyName = 'CTRL'
+        # elif e.key() == Qt.Key_PageUp:
+        #     keyName = 'PAGE_UP'
+        # elif e.key() == Qt.Key_PageDown:
+        #     keyName = 'PAGE_DOWN'
+        # elif e.key() == Qt.Key_Backspace:
+        #     keyName = 'BACKSPACE'
+        elif e.key() == Qt.Key_Escape:
+            keyName = 'ESCAPE'
+        print(' keyName : ', keyName)
+
+        if keyName == None:
+            return
+        self.keyDownCb(keyName)
+
+    def keyDownCb_f(self, keyName):
+        # if keyName == 'ESCAPE':
+        #     sys.exit(0)
+
+        # if keyName == 'BACKSPACE':
+        #     reset_env(self.env)
+        #     return
+
+        action = 0
+
+        if keyName == 'LEFT':
+            action = self.env.actions.left
+        elif keyName == 'RIGHT':
+            action = self.env.actions.right
+        elif keyName == 'UP':
+            action = self.env.actions.forward
+
+        elif keyName == 'SPACE':
+            action = self.env.actions.toggle
+        elif keyName == 'PAGE_UP':
+            action = self.env.actions.pickup
+        elif keyName == 'PAGE_DOWN':
+            action = self.env.actions.drop
+
+        # elif keyName == 'RETURN':
+        #     action = env.actions.done
+        #     #action = 'exit_game'
+
+        # Screenshot functionality
+        # elif keyName == 'ALT':
+        #     screen_path = options.env_name + '.png'
+        #     print('saving screenshot "{}"'.format(screen_path))
+        #     pixmap = env.render('pixmap')
+        #     pixmap.save(screen_path)
+        #     return
+
+        else:
+            print("unknown key %s" % keyName)
+            return
+
+        # Update state
+        # act_action(env, action)
+        self.act_action(self.env, action)
+
+    def act_action(self, env, action):
+        """
+        calculate new state (obs), save image of the state and if finished reset the environment
+        :param env: gym environment used
+        :param action: action taken
+        :return:
+        """
+        global game_directory
+        # if action == env.actions.done:
+        #     done = True
+        # else:
+        obs, reward, done, info = env.step(action)
+        print("state: ", self.state_filter(obs))
+
+        # Save state
+        game_info['trajectory'].append(self.state_filter(obs).tolist())
+        game_info['rewards'].append(reward)
+
+        print('step=%s, reward=%.2f' % (env.step_count, reward))
+
+        # Save screenshots
+        screenshot_file = 'game' + str(env.step_count) + '.png'
+        pixmap = env.render('pixmap')
+        screenshots.append((screenshot_file, pixmap))
+
+        # self.ui.game_label.setPixmap(pixmap)
+
+        if done:
+            # Save images and json
+
+            # Create new folder to save images and json
+            k = 1
+            original_game_directory = game_directory
+            while os.path.exists(game_directory):
+                game_directory = original_game_directory + "_" + str(k)
+                k += 1
+            os.makedirs(game_directory)
+
+            # Save image of each state
+            for screenshot_file, pixmap in screenshots:
+                pixmap.save(os.path.join(game_directory, screenshot_file))
+
+            game_info["score"] = sum(game_info["rewards"])
+            with open(os.path.join(game_directory, 'game.json'), 'w+') as game_file:
+                json.dump(game_info, game_file, ensure_ascii=False)
+
+            print('done!', len(game_info['trajectory']))
+
+            # sys.exit(0)
+            # TODO change
+            # self.close()
+            self.done = True
+
+        if action == env.actions.done:
+            return obs, None, True, None
+        return obs, reward, done, info
+
+    def play_new_game(self):
         game_label = self.ui.game_label
-        state, game_directory, pixmap = self.reset_env(self.env)
+        self.reset_env(self.env, self.env_name)
         pixmap = self.env.render('pixmap')
+        print('pixmap')
+        # print(type(self.env.render('human')), type(self.env.render('pixmap')))
         game_label.setPixmap(pixmap)
-        pixmap.window.setKeyDownCb(keyDownCb)
-        done = False
-        while not done:
-            self.env.render('pixmap')
+        self.show()
+        self.setKeyDownCb(self.keyDownCb_f)
 
-            if pixmap.window is None:
+        self.done = False
+        while not self.done:
+            pixmap = self.env.render('pixmap')
+            game_label.setPixmap(pixmap)
+
+            if self.done is True:
+                pixmap = self.env.render('pixmap')
+                game_label.setPixmap(pixmap)
+                self.ui.game_buttonBox.button(QtWidgets.QDialogButtonBox.Save).setEnabled(True)
                 break
 
-
+        # return self.game_folder
 
     def state_filter(self, state):
         return state['image'][:, :, 0]
 
-    def reset_env(self, env):
+    def reset_env(self, env, env_name):
         """
         reset the environment, initialize game_name, game_info and directory
 
@@ -169,10 +288,10 @@ class NewGameView(QDialog):
         :return:
         """
         global game_name, game_info, game_directory, screenshots
-        state = self.env.reset()
-        self.env.render()
-        if hasattr(self.env, 'mission'):
-            print('Mission: %s' % self.env.mission)
+        state = env.reset()
+        env.render()
+        # if hasattr(env, 'mission'):
+        #     print('Mission: %s' % self.env.mission)
 
         # Get timestamp to identify this game
         game_name = datetime.now().strftime("%Y-%m-%d_%H:%M:%S")
@@ -186,16 +305,20 @@ class NewGameView(QDialog):
             'score': None,
             'to_delete': False
         }
-        # TODO: fix all
-        game_directory = os.path.join(games_path, self.env, str(game_name))
 
-        screenshot_file = 'game' + str(self.env.step_count) + '.png'
-        pixmap = self.env.render('pixmap')
+        game_directory = os.path.join(games_path, env_name, str(game_name))
+
+        screenshot_file = 'game' + str(env.step_count) + '.png'
+        pixmap = env.render('pixmap')
         screenshots = [(screenshot_file, pixmap)]
+
+        self.game_folder = game_name
 
         return state, game_directory, pixmap
 
-
+    # def accept(self) -> None:
+    #     self.close()
+    #     return game_directory
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)

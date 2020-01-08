@@ -66,7 +66,7 @@ class GamesView(QMainWindow):
     #     # self.update_image(0)
 
     # TODO fix: add model
-    def add_row(self, env, name, folder_name, list_='games'):
+    def add_row(self, env, folder_name, list_='games'):
         """
         add row for a new game to games gui
         :param list_:
@@ -85,7 +85,7 @@ class GamesView(QMainWindow):
 
         # horiz = QHBoxLayout()
         # game name
-        horiz.addWidget(QLabel(name))
+        horiz.addWidget(QLabel(folder_name))
 
         # game imgs
         imgs_names = [elem for elem in os.listdir(os.path.join(games_path, env, folder_name)) if elem.endswith(".png")]
@@ -165,7 +165,7 @@ class GamesView(QMainWindow):
         for traj_idx, traj in enumerate(os.listdir(os.path.join(games_path, env))):
             # print(traj)
             # print('add row', traj_idx)
-            self.add_row(env, 'game ' + str(traj_idx), traj)
+            self.add_row(env, traj)
 
     def remove_game_from_gui(self, folder_name):
         """

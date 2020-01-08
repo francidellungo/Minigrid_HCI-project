@@ -13,7 +13,7 @@ class Ui_new_game_Dialog(object):
         new_game_Dialog.setObjectName("new_game_Dialog")
         new_game_Dialog.setWindowModality(QtCore.Qt.NonModal)
         new_game_Dialog.setEnabled(True)
-        new_game_Dialog.resize(495, 359)
+        new_game_Dialog.resize(495, 352)
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Preferred)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)

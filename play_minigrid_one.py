@@ -124,50 +124,50 @@ def act_action(env, action):
     return obs, reward, done, info
 
 
-def keyDownCb(keyName):
+def keyDownCb(keyName, env):
 
-        if keyName == 'ESCAPE':
-            sys.exit(0)
+    if keyName == 'ESCAPE':
+        sys.exit(0)
 
-        if keyName == 'BACKSPACE':
-            reset_env(env)
-            return
+    if keyName == 'BACKSPACE':
+        reset_env(env)
+        return
 
-        action = 0
+    action = 0
 
-        if keyName == 'LEFT':
-            action = env.actions.left
-        elif keyName == 'RIGHT':
-            action = env.actions.right
-        elif keyName == 'UP':
-            action = env.actions.forward
+    if keyName == 'LEFT':
+        action = env.actions.left
+    elif keyName == 'RIGHT':
+        action = env.actions.right
+    elif keyName == 'UP':
+        action = env.actions.forward
 
-        elif keyName == 'SPACE':
-            action = env.actions.toggle
-        elif keyName == 'PAGE_UP':
-            action = env.actions.pickup
-        elif keyName == 'PAGE_DOWN':
-            action = env.actions.drop
+    elif keyName == 'SPACE':
+        action = env.actions.toggle
+    elif keyName == 'PAGE_UP':
+        action = env.actions.pickup
+    elif keyName == 'PAGE_DOWN':
+        action = env.actions.drop
 
-        # elif keyName == 'RETURN':
-        #     action = env.actions.done
-        #     #action = 'exit_game'
+    # elif keyName == 'RETURN':
+    #     action = env.actions.done
+    #     #action = 'exit_game'
 
-        # Screenshot functionality
-        # elif keyName == 'ALT':
-        #     screen_path = options.env_name + '.png'
-        #     print('saving screenshot "{}"'.format(screen_path))
-        #     pixmap = env.render('pixmap')
-        #     pixmap.save(screen_path)
-        #     return
+    # Screenshot functionality
+    # elif keyName == 'ALT':
+    #     screen_path = options.env_name + '.png'
+    #     print('saving screenshot "{}"'.format(screen_path))
+    #     pixmap = env.render('pixmap')
+    #     pixmap.save(screen_path)
+    #     return
 
-        else:
-            print("unknown key %s" % keyName)
-            return
+    else:
+        print("unknown key %s" % keyName)
+        return
 
-        # Update state
-        # act_action(env, action)
-        act_action(env, action)
+    # Update state
+    # act_action(env, action)
+    act_action(env, action)
 
 
 def minigrid_play_one(env_used):

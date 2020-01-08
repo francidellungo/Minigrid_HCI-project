@@ -8,7 +8,7 @@ games_path = 'games'
 
 class GamesModel(QObject):
 
-    new_game_s = pyqtSignal(str, str, str)  # TODO fix
+    new_game_s = pyqtSignal(str, str)
     game_removed = pyqtSignal(str)
     game_moved = pyqtSignal(str, int)
 
@@ -20,7 +20,7 @@ class GamesModel(QObject):
         # self.games = {}
         self.games_list = []
         self.ranked_games = []
-        self.games_info = {}  # TODO to complete folder name, name ecc
+        # self.all_games = {}  # TODO to complete folder name, name ecc
         self.n_games = 0
         self.load_existing_games(env)
 
@@ -34,22 +34,24 @@ class GamesModel(QObject):
         :return:
         """
         for idx, game in enumerate(os.listdir(os.path.join(games_path, env))):
-            # self.games.append(('game' + str(idx), game, 'games'))
             self.games_list.append(game)
+            # self.all_games[str(game)] = {'name': game}
+
             # self.games[str(game)] = {'name': 'game' + str(idx), 'list': 'games'}
             self.n_games += 1
 
-    def new_game(self, env, name):
+    def new_game(self, env, folder_name, game_name):
         """
         create and add a new game
         :param name: game name
         :return:
         """
-        new_game = {'name': name, 'folder_name': None, 'list': 'games'}
-        self.new_game_s.emit(env, name, new_game['folder_name'])
-        self.games.append(new_game)
+        # TODO fix
+        self.games_list.append(folder_name)
+        print(folder_name, 'folder_name')
+        # new_game = {'name': name, 'folder_name': folder_name, 'list': 'games'}
+        self.new_game_s.emit(env, folder_name)
         self.n_games += 1
-        # minigrid play game
 
     def move_game(self, current_list, game_idx):
         """
