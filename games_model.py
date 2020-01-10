@@ -12,8 +12,8 @@ class GamesModel(QObject):
     game_removed = pyqtSignal(str)
     game_moved = pyqtSignal(str, str)
 
-    moved_up = pyqtSignal(int)
-    moved_down = pyqtSignal(int)
+    moved_up = pyqtSignal(str)
+    moved_down = pyqtSignal(str)
 
     def __init__(self, env):
         super().__init__()
@@ -91,57 +91,20 @@ class GamesModel(QObject):
         else:
             self.ranked_games.remove(folder_name)
 
-    def move_up(self, game_name, list_):
+    def move_up(self, game_name):
         # move element up in the rank list
-        # if list_ == 'games':
-        #     idx = self.games_list.index(game_name)
-        #     assert idx > 0
-        #     # swap elements in list
-        #     self.games_list[idx],  self.games_list[idx-1] = self.games_list[idx-1], self.games_list[idx]
-        # else:
-        #     idx = self.ranked_games.index(game_name)
-        #     assert idx > 0
+        idx = self.ranked_games.index(game_name)
+        assert idx > 0
+        self.ranked_games[idx], self.ranked_games[idx - 1] = self.ranked_games[idx - 1], self.ranked_games[idx]
+        self.moved_up.emit(game_name)
 
-        return False
-
-    def move_down(self, game_idx):
+    def move_down(self, game_name):
         # move element down in the rank list
-        if game_idx < len(self.ranked_games) - 1:
-            self.ranked_games[game_idx], self.ranked_games[game_idx + 1] = self.ranked_games[game_idx + 1], self.ranked_games[game_idx]
-            self.moved_down.emit(game_idx)
-            return True
-        return False
-#
-# class Game(QObject):
-#
-#     def __init__(self, game_name):
-#         super().__init__()
-#         self.name = game_name
-#         self.image = None
-#         self.info = None
-#         self.my_list = 'games'  # my_list == 'games' or 'rank'
-
-    # @property
-    # def name(self):
-    #     return self.name
-    #
-    # @name.setter
-    # def name(self, name_):
-    #     self.name = name_
+        idx = self.ranked_games.index(game_name)
+        assert idx != len(self.ranked_games) - 1
+        self.ranked_games[idx], self.ranked_games[idx + 1] = self.ranked_games[idx + 1], self.ranked_games[idx]
+        self.moved_down.emit(game_name)
 
 
-# class GamesList(list):
-#     def __init__(self):
-#         super().__init__()
-#
-#     def append(self, object: _T) -> None:
-#         super().append(object)
-#
-#     def pop(self, index: int = ...) -> _T:
-#         return super().pop(index)
-#
-#     def remove(self, object: _T) -> None:
-#         super().remove(object)
-#
 
 

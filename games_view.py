@@ -13,13 +13,13 @@ games_path = 'games'
 
 folder_name = '2020-01-05_15:04:54'
 
-
-class ClickLabel(QLabel):
-    clicked = pyqtSignal()
-
-    def mousePressEvent(self, event):
-        self.clicked.emit()
-        QLabel.mousePressEvent(self, event)
+# NOT USED: DELETE
+# class ClickLabel(QLabel):
+#     clicked = pyqtSignal()
+#
+#     def mousePressEvent(self, event):
+#         self.clicked.emit()
+#         QLabel.mousePressEvent(self, event)
 
 # class ClickableLabel(QLabel):
 #
@@ -46,8 +46,6 @@ class GamesView(QMainWindow):
         self.env = env
         self.counts = []
 
-        self.game_layouts = []
-        # TODO rank_layouts
         self.initUI(env)
         self.setWindowTitle(env)
 
@@ -68,10 +66,11 @@ class GamesView(QMainWindow):
     #     # self.update_image(0)
 
     # TODO fix: add model
-    def add_row(self, env, folder_name, list_='games'):
+    def add_row(self, env, folder_name, list_='games', position = None):
         """
         add row for a new game to games gui
-        :param list_:
+        :param position: index of the position to insert the new row in the layout list
+        :param list_: 'games' or 'rank'
         :param env: current environment used
         :param name: name for the new game
         :param folder_name: name of the new game folder
@@ -101,12 +100,7 @@ class GamesView(QMainWindow):
         # img_path = os.path.join(games_path, env, folder_name, 'game1.png')
         pixmap = QPixmap(os.path.join(games_path, env, folder_name, 'game0.png'))
 
-        # label = QLabel()
-        # label.setPixmap(pixmap)
-        # label.setMouseTracking(True)
-
-        # show trajectories in loop when click on it
-        img_label = ClickLabel()
+        img_label = QLabel()
         img_label.setPixmap(pixmap)
 
         timer = QTimer()
@@ -114,7 +108,11 @@ class GamesView(QMainWindow):
         self.counts.append(counter)
         self.counts.index(counter)
         # print('self.counts.index(self.counter)', self.counts.index(counter))
-        img_label.clicked.connect(lambda: self.show_traj_imgs(dir_path, img_label, timer, self.counts.index(counter)))
+
+        # show trajectories in loop when pass on it with mouse
+        # TODO fix:
+        img_label.enterEvent = lambda ev: self.show_traj_imgs(dir_path, img_label, timer, self.counts.index(counter))
+        # img_label.underMouse.connect(lambda: self.show_traj_imgs(dir_path, img_label, timer, self.counts.index(counter)))
 
         horiz.addWidget(img_label)
 
@@ -129,11 +127,19 @@ class GamesView(QMainWindow):
         if list_ == 'games':
             move_btn = QPushButton('->')
             horiz.addWidget(move_btn)
+        else:
+            # in 'rank' list
+            move_up_btn = QPushButton('move up')
+            move_up_btn.setObjectName('move_up_btn')
+            move_down_btn = QPushButton('move down')
+            move_down_btn.setObjectName('move_down_btn')
+            horiz.addWidget(move_up_btn)
+            horiz.addWidget(move_down_btn)
 
 
+        # add row to vertical layout
         if list_ == 'games':
             self.ui.games_verticalLayout.addWidget(row)
-
             # game_idx = [item['layout'] for item in self.game_layouts if item['layout'] == horiz]
             # print(game_idx, horiz)
             # [item['layout'] for item in self.game_layouts if item["layout"] == horiz]
@@ -141,14 +147,68 @@ class GamesView(QMainWindow):
 
             # self.game_layouts.index(item for item in self.game_layouts if item["layout"] == horiz)
         else:
-            self.ui.ranking_verticalLayout.addWidget(row)
+            if position is None:
+                self.ui.ranking_verticalLayout.addWidget(row)
+            else:
+                self.ui.ranking_verticalLayout.insertWidget(position, row)
 
+        # connect all the buttons:
         # delete game push button
         delete_pb.clicked.connect(lambda: self.confirm_delete_dialog(row))
 
         # move game between lists push button
-        # move_btn.clicked.connect(lambda: print(row.objectName()))
         move_btn.clicked.connect(lambda: self.model.move_game(('games' if row.parent().objectName() == 'games_verticalW' else 'rank'), row.objectName()))
+        # move_btn.clicked.connect(self.check_enable_btn)
+
+        if list_ == 'rank':
+            # connect move up and down buttons (in ranking list)
+            move_up_btn.clicked.connect(lambda: self.model.move_up(folder_name))
+            print(self.ui.ranking_verticalLayout.indexOf(self.ui.ranking_verticalW.findChild(QWidget, folder_name)))
+            move_up_btn.setEnabled(True)
+            # move_down_btn.clicked.connect(self.check_enable_btn)
+
+            move_down_btn.clicked.connect(lambda: self.model.move_down(folder_name))
+            # move_down_btn.clicked.connect(self.check_enable_btn)
+            # for row in self.ui.ranking_verticalLayout
+            # if row.indexOf(self.ui.ranking_verticalW.findChild(QWidget, folder_name)) == 0:
+            # print(' # elementi in ranking list: ', self.ui.ranking_verticalLayout.count())
+            move_down_btn.setEnabled(True)
+        self.check_enable_btn()
+        print(' # elementi in ranking list: ', self.ui.ranking_verticalLayout.count())
+        # # move up and down games in ranking list
+        # move_up_btn.clicked.connect(lambda: self.model.move_up(folder_name))
+        # move_down_btn.clicked.connect(lambda: self.model.move_up(folder_name))
+
+    def check_enable_btn(self):
+        print('numero elementi quando chiamo check enable: ', self.ui.ranking_verticalLayout.count())
+        # print(self.ui.ranking_verticalLayout.itemAt(0).widget().findChild(QPushButton, 'move_down_btn').objectName())
+        # self.ui.ranking_verticalLayout.itemAt(0).widget().findChild(QPushButton, 'move_down_btn').setEnabled(False)
+        # self.ui.ranking_verticalLayout.itemAt(0).widget().findChild(QPushButton, 'move_up_btn').setEnabled(False)
+        # self.ui.ranking_verticalLayout.itemAt(self.ui.ranking_verticalLayout.count() -1).widget().findChild(QPushButton, 'move_down_btn').setEnabled(False)
+
+        # only 1 element in ranking list
+        if self.ui.ranking_verticalLayout.count() == 1:
+            self.ui.ranking_verticalLayout.itemAt(0).widget().findChild(QPushButton, 'move_up_btn').setEnabled(False)
+            self.ui.ranking_verticalLayout.itemAt(0).widget().findChild(QPushButton, 'move_down_btn').setEnabled(False)
+            return
+
+        for row_idx in range(self.ui.ranking_verticalLayout.count()):
+            print(row_idx)
+            if row_idx == 0:
+                print('row_idx == 0')
+                self.ui.ranking_verticalLayout.itemAt(row_idx).widget().findChild(QPushButton, 'move_up_btn').setEnabled(False)
+                self.ui.ranking_verticalLayout.itemAt(row_idx).widget().findChild(QPushButton, 'move_down_btn').setEnabled(True)
+            elif row_idx == self.ui.ranking_verticalLayout.count() - 1:
+                print('row_idx == ', self.ui.ranking_verticalLayout.count() - 1)
+                self.ui.ranking_verticalLayout.itemAt(row_idx).widget().findChild(QPushButton, 'move_up_btn').setEnabled(True)
+                self.ui.ranking_verticalLayout.itemAt(row_idx).widget().findChild(QPushButton, 'move_down_btn').setEnabled(False)
+            else:
+                print('row_idx in the middle')
+                self.ui.ranking_verticalLayout.itemAt(row_idx).widget().findChild(QPushButton, 'move_up_btn').setEnabled(True)
+                self.ui.ranking_verticalLayout.itemAt(row_idx).widget().findChild(QPushButton, 'move_down_btn').setEnabled(True)
+
+        # self.ui.ranking_verticalW.findChild(QPushButton, 'move_up_btn').setEnabled(False)
+
 
     def confirm_delete_dialog(self, row):
         button_reply = QMessageBox.question(self, 'Confirm deletion', "Are you sure you want to delete " + str(row.objectName() + " ?"),
@@ -195,10 +255,9 @@ class GamesView(QMainWindow):
         # l_item = self.ui.games_verticalLayout.itemAt(game_idx).layout() if current_list == 'games' else self.ui.ranking_verticalLayout.itemAt(game_idx).layout()
         # l_item = self.game_layouts[game_idx]
         # print(self.ui.games_verticalLayout.count(), len(self.game_layouts))
-        print(w_item.objectName())
+        # print(w_item.objectName())
         removed_widgets = self.clear_layout(w_item)
-        print('removed_widgets: ', removed_widgets)
-        print(' ')
+        # print('removed_widgets: ', removed_widgets)
 
         return removed_widgets
 
@@ -217,19 +276,20 @@ class GamesView(QMainWindow):
                     self.clearLayout(item.layout())
                     print(item.layout())
         widget_row.deleteLater()
+        widget_row.parent().layout().removeWidget(widget_row)
         return removed
 
-    def add_layout(self, layout, list_):
-        curr_list = self.ui.games_verticalLayout if list_ == 'games' else self.ui.ranking_verticalLayout
-        curr_list.addLayout(layout)
+    # def add_layout(self, layout, list_):
+    #     curr_list = self.ui.games_verticalLayout if list_ == 'games' else self.ui.ranking_verticalLayout
+    #     curr_list.addLayout(layout)
 
     def move_game_gui(self, dest_list_name, game_name):
 
-        # TODO fix:
         print('game_name: ', game_name, 'dest list: ', dest_list_name)
         self.remove_game_from_gui(game_name)
 
         self.add_row(self.env, game_name, dest_list_name)
+        # self.check_enable_btn()
 
         # l_item = self.ui.centralwidget.findChild(QWidget, game_name)
         # # l_item.setParent(None)
@@ -244,14 +304,22 @@ class GamesView(QMainWindow):
         # self.add_row(env_used, 'ff', folder_name, 'rank')
         # self.ui.games_verticalLayout.removeItem()
 
-    def move_game_up_gui(self, game_idx):
+    def move_game_up_gui(self, game_name):
         #insertItem(index, a1)
         # self.ui.games_verticalLayout.insertLayout()
         # replaceWidget()
-        pass
+        old_idx = self.ui.ranking_verticalLayout.indexOf(self.ui.ranking_verticalW.findChild(QWidget, game_name))
+        # print('position: ', old_idx, 'position to insert: ', old_idx - 1)
+        self.remove_game_from_gui(game_name)
+        self.add_row(self.env, game_name, list_='rank', position=old_idx - 1)
+        # self.check_enable_btn()
 
-    def move_game_down_gui(self, game_idx):
-        pass
+    def move_game_down_gui(self, game_name):
+        old_idx = self.ui.ranking_verticalLayout.indexOf(self.ui.ranking_verticalW.findChild(QWidget, game_name))
+        # print('position: ', old_idx, 'position to insert: ', old_idx + 1)
+        self.remove_game_from_gui(game_name)
+        self.add_row(self.env, game_name, list_='rank', position=old_idx + 1)
+        # self.check_enable_btn()
 
     def get_items_in_list(self, list ='games'):
         if list == 'games':
@@ -262,7 +330,7 @@ class GamesView(QMainWindow):
 
     def show_traj_imgs(self, games_dir, img_label, timer, count_idx):
         # timer = QTimer(self)
-        # TODO loop over imgs in dir until when?
+        # TODO fix: maybe use just 1 timer, not 1 for each
         imgs_nums = [elem.split('game')[1].split('.')[0] for elem in os.listdir(games_dir) if elem.endswith(".png")]
         imgs_nums.sort(key=int)
         imgs = ['game' + str(img_num) + '.png' for img_num in imgs_nums]
