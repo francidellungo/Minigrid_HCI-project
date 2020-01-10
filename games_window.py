@@ -20,35 +20,44 @@ games_path = 'games'
 folder_name = '2019-12-11_13:40:14'
 
 
-class MainWindow:
+class GamesController:
 
-    def __init__(self, env):
-        # model
-        self.model = GamesModel(env)
+    def __init__(self, env, agents_model=None):
+
+        # env
+        self.env = env
+
+        # agents_model
+        self.agents_model = agents_model
+
+        # games_model
+        self.games_model = GamesModel(env)
 
         # view (gui)
-        self.view = GamesView(env, self.model)
+        self.view = GamesView(env, self.games_model)
         self.view.show()
 
         # gui for new game
         # self.new_game_view_Dialog = NewGameView(env)
 
-        # connect model signals to slots
-        self.model.new_game_s.connect(self.view.add_row)
-        # self.model.new_game_s.connect(self.create_delete_pb_connection)
+        # connect games_model signals to slots
+        self.games_model.new_game_s.connect(self.view.add_row)
+        # self.games_model.new_game_s.connect(self.create_delete_pb_connection)
 
-        self.model.game_removed.connect(self.view.remove_game_from_gui)
-        self.model.game_moved.connect(self.view.move_game_gui)
+        self.games_model.game_removed.connect(self.view.remove_game_from_gui)
+        self.games_model.game_moved.connect(self.view.move_game_gui)
 
-        self.model.moved_up.connect(self.view.move_game_up_gui)
-        self.model.moved_down.connect(self.view.move_game_down_gui)
+        self.games_model.moved_up.connect(self.view.move_game_up_gui)
+        self.games_model.moved_down.connect(self.view.move_game_down_gui)
 
         # connect buttons events to slots (without view)
-        # self.ui.new_game_pb.clicked.connect(lambda: self.model.new_game(env_used, 'game ' + str(self.model.n_games)))
+        # self.ui.new_game_pb.clicked.connect(lambda: self.games_model.new_game(env_used, 'game ' + str(self.games_model.n_games)))
 
         # connect buttons events to slots
         self.view.ui.new_game_pb.clicked.connect(lambda: self.create_new_game(env))
         # self.view.ui.remove_game_pb.clicked.connect(lambda: self.model.remove_game('games', 0))
+        # self.view.ui.remove_game_pb.clicked.connect(lambda: self.games_model.remove_game('games', 0))
+        self.view.ui.train_pb.clicked.connect(self.train_agent_slot)
 
     def create_new_game(self, env):
         """
@@ -93,6 +102,16 @@ class MainWindow:
     #
     #     self.view.ui.verticalLayout_2.addLayout(horiz)
     #     pass
+
+    def print_(self):
+        print('funziona')
+
+    def train_agent_slot(self):
+        if self.agents_model is None:
+            print("Error: agents_model is None")
+            return
+        self.agents_model.create_agent(self.env, ["2019-12-17_23:20:25", "2019-12-17_23:19:35", "2019-12-17_23:17:48"]) # TODO cambiareeeeee (ottenere la lista da games_model)
+        # TODO: chiudere finestra se agent viene creato correttamente
 
 
 class NewGameView(QDialog):
@@ -322,6 +341,6 @@ class NewGameView(QDialog):
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
-    window = MainWindow(env_used)
+    window = GamesController(env_used)
     # window.show()
     sys.exit(app.exec_())
