@@ -170,6 +170,9 @@ class AgentsWindow(QMainWindow):
         env_tab_widget = self.ui.environments_tabs.findChild(QWidget, environment + self.sep + "env_tab_widget")
         scroll_area_content_layout = env_tab_widget.findChild(QLayout, environment + self.sep + "scroll_area_content_layout")
         row = env_tab_widget.findChild(QWidget, environment + self.sep + agent_key + self.sep + "row")
+
+        for i in reversed(range(row.layout().count())):
+            row.layout().itemAt(i).widget().setParent(None)
         scroll_area_content_layout.removeWidget(row)
 
         self.agents_number[environment] -= 1

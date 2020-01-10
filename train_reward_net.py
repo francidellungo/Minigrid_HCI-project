@@ -51,6 +51,7 @@ def train_reward(env_name, reward_net_file=default_reward, games=None):
 
         train_games_info = sorted([json.load(open(file, "r")) for file in list_train_game_info_files], key=lambda x: x["score"])
         val_games_info = sorted([json.load(open(file, "r")) for file in list_val_game_info_files], key=lambda x: x["score"])
+        games = [x['name'] for x in train_games_info]
 
         X_train = [torch.Tensor(game_info["trajectory"]).to(device) for game_info in train_games_info]
         X_val = [torch.Tensor(game_info["trajectory"]).to(device) for game_info in val_games_info]
@@ -80,7 +81,7 @@ def train_reward(env_name, reward_net_file=default_reward, games=None):
     reward_net_dir = module_path.rsplit("/", 1)[0] if "/" in module_path else ""
     timestamp = datetime.now().strftime("%Y-%m-%d_%H:%M:%S")
     output_dir = os.path.join(reward_net_dir, env_name, timestamp)
-    reward_net.fit(X_train, max_epochs=20, X_val=X_val, output_folder=output_dir, train_games_info=train_games_info, val_games_info=val_games_info, autosave=True, epochs_for_checkpoint=10)
+    reward_net.fit(X_train, max_epochs=20, X_val=X_val, output_folder=output_dir, train_games_info=train_games_info, val_games_info=val_games_info, autosave=True, epochs_for_checkpoint=10, train_games=games)
 
     # evaluate after training
     #reward_net.evaluate(X_test, [reward_net.quality])

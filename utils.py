@@ -28,9 +28,9 @@ def load_last_policy(directory):
     # load the most recent weights from the specified folder
     epoch_to_load_weights = get_last_policy_episode(directory)
 
-    policy_net = torch.load(os.path.join(directory, "net.pth"))
+    policy_net = torch.load(os.path.join(directory, "net.pth"), map_location=device)
     if epoch_to_load_weights is not None:
-        policy_net.load_state_dict(torch.load(os.path.join(directory, "policy_net-" + str(epoch_to_load_weights) + ".pth")))
+        policy_net.load_state_dict(torch.load(os.path.join(directory, "policy_net-" + str(epoch_to_load_weights) + ".pth"),  map_location=device))
     policy_net = policy_net.to(device)
     return policy_net
 

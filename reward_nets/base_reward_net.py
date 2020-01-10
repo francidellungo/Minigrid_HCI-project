@@ -82,7 +82,7 @@ class RewardNet(nn.Module):
     def forward(self, x):
         pass
 
-    def fit(self, X_train, max_epochs=1000, batch_size=16, num_subtrajectories=7, subtrajectory_length=3, X_val=None, output_folder="", use_also_complete_trajectories=True, train_games_info=None, val_games_info=None, autosave=False, epochs_for_checkpoint=None):
+    def fit(self, X_train, max_epochs=1000, batch_size=16, num_subtrajectories=7, subtrajectory_length=3, X_val=None, output_folder="", use_also_complete_trajectories=True, train_games_info=None, val_games_info=None, autosave=False, epochs_for_checkpoint=None, train_games=None):
 
         ''' print info to open output directory and to open tensorboard '''
         print('output directory:\n"' + os.path.abspath(output_folder) + '"')
@@ -91,7 +91,7 @@ class RewardNet(nn.Module):
         tensorboard = SummaryWriter(tb_path)
 
         ''' save info about this training in training.json, and also save the structure of the network '''
-        self.save_training_details(output_folder, batch_size, num_subtrajectories, subtrajectory_length, use_also_complete_trajectories)
+        self.save_training_details(output_folder, batch_size, num_subtrajectories, subtrajectory_length, use_also_complete_trajectories, train_games)
         torch.save(self, os.path.join(output_folder, "net.pth"))
 
         # TODO ha senso che subtrajectory_length invece di una costante sia un range entro il quale scegliere a random la lunghezza della sottotraiettoria?
@@ -279,7 +279,7 @@ class RewardNet(nn.Module):
         return np.corrcoef(true_trajectories_scores, normalized_trajectories_scores)[0][1]
 
     ''' save net and training details in training.json '''
-    def save_training_details(self, output_folder, batch_size, num_subtrajectories, subtrajectory_length, use_also_complete_trajectories):
+    def save_training_details(self, output_folder, batch_size, num_subtrajectories, subtrajectory_length, use_also_complete_trajectories, train_games):
         if not os.path.exists(output_folder):
             os.makedirs(output_folder)
 
@@ -289,11 +289,13 @@ class RewardNet(nn.Module):
                 summary(self, (1, 7, 7)) # TODO sistemare questo shape
                 net_summary = out.getvalue()
             print(net_summary)
-            json.dump({"type": str(type(self)), "str": str(self).replace("\n", ""), "optimizer": str(self.optimizer),
-                       "penalty_rewards": self.lambda_abs_rewards, "batch_size": batch_size,
-                       "num_subtrajectories": num_subtrajectories, "subtrajectory_length": subtrajectory_length,
-                       "use_also_complete_trajectories": use_also_complete_trajectories, "summary": net_summary},
-                      file, indent=True)
+            j = {"type": str(type(self)), "str": str(self).replace("\n", ""), "optimizer": str(self.optimizer),
+                 "penalty_rewards": self.lambda_abs_rewards, "batch_size": batch_size,
+                 "num_subtrajectories": num_subtrajectories, "subtrajectory_length": subtrajectory_length,
+                 "use_also_complete_trajectories": use_also_complete_trajectories, "summary": net_summary}
+            if train_games is not None:
+                j["games"] = train_games
+            json.dump(j, file, indent=True)
 
     ''' save net weights (remark: only weights are saved here, not the network structure!) '''
     def save_checkpoint(self, epoch, output_folder):

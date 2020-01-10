@@ -14,28 +14,36 @@ from utils import load_last_policy, state_filter, get_last_policy_episode
 
 class AgentDetailWindow(QMainWindow):
 
-    def __init__(self, agents_model, environment, agent_name):
+    def __init__(self, agents_model, environment, agent_key):
         super().__init__()
 
+        # save parameters into class fields
         self.agents_model = agents_model
         self.environment = environment
-        self.agent_name = agent_name
+        self.agent_key = agent_key
 
+        # init UI
         self.ui = Ui_Agent()
         self.ui.setupUi(self)
-        self.setWindowTitle(agent_name)
+        self.setWindowTitle(agent_key)
 
+        # update text label and gif label of training status (completed / training)
         self.refresh_training_status()
 
+        # link slot to delete the agent
         self.ui.btnDeleteAgent.clicked.connect(self.delete)
 
-        self.game_thread = GameThread(agents_model, environment, agent_name, self.ui.labelGame)
+        # display on the right side of the window the games used to train the reward used to train this policy
+        self.display_games()
+
+        # start the thread that plays minigrid with this agent (policy)
+        self.game_thread = GameThread(agents_model, environment, agent_key, self.ui.labelGame)
         self.game_thread.start()
 
     def refresh_training_status(self):
-        agent = self.agents_model.get_agent(self.environment, self.agent_name)
+        agent = self.agents_model.get_agent(self.environment, self.agent_key)
         max_episodes = agent["max_episodes"]
-        current_episode = get_last_policy_episode(agent["path"])
+        current_episode = get_last_policy_episode(agent["path"]) or 0
 
         if current_episode + 1 == max_episodes: # +1 is used because episode count starts from 0
             self.ui.labelStatus.setText("Status: training completed")
@@ -57,10 +65,14 @@ class AgentDetailWindow(QMainWindow):
     def delete(self):
         reply = QMessageBox.question(self, "Delete agent", "Are you sure to delete this agent?", QMessageBox.Yes | QMessageBox.No)
         if reply == QMessageBox.Yes:
-            print("deleting: " + self.agents_model.get_agent(self.environment, self.agent_name)["path"])
-            self.agents_model.delete_agent(self.environment, self.agent_name)
+            print("deleting: " + self.agents_model.get_agent(self.environment, self.agent_key)["path"])
+            self.agents_model.delete_agent(self.environment, self.agent_key)
             print("successfully deleted")
             self.close()
+
+    def display_games(self):
+        games = self.agents_model.get_agent(self.environment, self.agent_key)["games"]
+        # TODO usare questa lista di games per creare la grafica sulla destra
 
 
 class GameThread(Thread):

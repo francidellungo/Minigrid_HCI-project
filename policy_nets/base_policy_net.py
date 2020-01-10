@@ -36,7 +36,7 @@ class PolicyNet(nn.Module):
     def forward(self, x):
         pass
 
-    def fit(self, episodes=100, batch_size=16, reward=None, render=False, autosave=False, episodes_for_checkpoint=None, output_folder=""):
+    def fit(self, episodes=100, batch_size=16, reward=None, render=False, autosave=False, episodes_for_checkpoint=None, output_folder="", reward_net_key=None):
 
         ''' print info to open output directory and to open tensorboard '''
         print('output directory:\n"' + os.path.abspath(output_folder) + '"')
@@ -45,7 +45,7 @@ class PolicyNet(nn.Module):
         tensorboard = SummaryWriter(tb_path)
 
         ''' save info about this training in training.json, and also save the structure of the network '''
-        self.save_training_details(output_folder, reward, batch_size, episodes)
+        self.save_training_details(output_folder, reward, batch_size, episodes, reward_net_key)
         torch.save(self, os.path.join(output_folder, "net.pth"))
 
         ''' init metrics '''
@@ -192,20 +192,26 @@ class PolicyNet(nn.Module):
             return states, actions, true_rewards, rewards, discounted_rewards, step
 
     ''' save net and training details in training.json '''
-    def save_training_details(self, output_folder, reward, batch_size, episodes):
+    def save_training_details(self, output_folder, reward, batch_size, episodes, reward_net_key=None):
         if not os.path.exists(output_folder):
             os.makedirs(output_folder)
 
         with open(os.path.join(output_folder, "training.json"), "wt") as file:
-            r = "env" if reward is None else str(reward)
+            reward_type = "env" if reward is None else "net"
             # (7,7,3) == self.env.observation_space.spaces['image'].shape
             with io.StringIO() as out, redirect_stdout(out):
                 summary(self, (1, 7, 7))
                 net_summary = out.getvalue()
             print(net_summary)
             name = os.path.split(output_folder)[-1]
-            json.dump({"name": name, "type": str(type(self)), "str": str(self).replace("\n", ""), "reward": r,
-                       "batch_size": batch_size, "max_episodes": episodes, "summary": net_summary}, file, indent=True)
+            j = {"name": name, "type": str(type(self)), "str": str(self).replace("\n", ""), "reward_type": reward_type,
+                       "batch_size": batch_size, "max_episodes": episodes, "summary": net_summary}
+
+            if reward_type == "net":
+                j["reward_net_key"] = reward_net_key
+                j["reward_net_details"] = str(reward)
+
+            json.dump(j, file, indent=True)
 
     ''' save net weights (remark: only weights are saved here, not the network structure!) '''
     def save_checkpoint(self, episode, output_folder):
