@@ -10,7 +10,7 @@ class GamesModel(QObject):
 
     new_game_s = pyqtSignal(str, str)
     game_removed = pyqtSignal(str)
-    game_moved = pyqtSignal(str, int)
+    game_moved = pyqtSignal(str, str)
 
     moved_up = pyqtSignal(int)
     moved_down = pyqtSignal(int)
@@ -46,25 +46,30 @@ class GamesModel(QObject):
         :param name: game name
         :return:
         """
-        # TODO fix
         self.games_list.append(folder_name)
         print(folder_name, 'folder_name')
         # new_game = {'name': name, 'folder_name': folder_name, 'list': 'games'}
         self.new_game_s.emit(env, folder_name)
         self.n_games += 1
 
-    def move_game(self, current_list, game_idx):
+    def move_game(self, current_list, game_name):
         """
         move game from a list to  the other (games -> ranking or ranking -> games)
         :param current_list: list where the game is before moving
         :param game_idx: index of the element in the current list
         :return:
         """
-        source_list = self.games if current_list == 'games' else self.ranked_games
-        dest_list = self.ranked_games if current_list == 'games' else self.games
-        game = source_list.pop(game_idx)
-        dest_list.append(game)
-        self.game_moved.emit(current_list, game_idx)
+        print('current_list, game_name: ', current_list, game_name)
+        folder_name = game_name
+        source_list = self.games_list if current_list == 'games' else self.ranked_games
+        dest_list = self.ranked_games if current_list == 'games' else self.games_list
+        # game_idx = source_list.index(game_name)
+        source_list.remove(game_name)
+        dest_list.append(game_name)
+        dest_list_name = 'rank' if current_list == 'games' else 'games'
+
+        self.game_moved.emit(dest_list_name, folder_name)
+
 
         # TODO emit signal list changed
 
@@ -80,27 +85,23 @@ class GamesModel(QObject):
         self.game_removed.emit(folder_name)
 
         if list_ == 'games':
-            print(len(self.games_list))
+            # print(len(self.games_list))
             self.games_list.remove(folder_name)
             # del self.games[str(folder_name)]
         else:
-            del self.ranked_games[folder_name]
+            self.ranked_games.remove(folder_name)
 
-
-        # DELETE
-        # if current_list == 'games':
-        #     print(game_idx, len(self.games))
-        #     return self.games.pop(game_idx)
-        # else:
-        #     print(game_idx, len(self.ranked_games))
-        #     return self.ranked_games.pop(game_idx)
-
-    def move_up(self, game_idx):
+    def move_up(self, game_name, list_):
         # move element up in the rank list
-        if game_idx is not 0:
-            self.ranked_games[game_idx], self.ranked_games[game_idx-1] = self.ranked_games[game_idx-1], self.ranked_games[game_idx]
-            self.moved_up.emit(game_idx)
-            return True
+        # if list_ == 'games':
+        #     idx = self.games_list.index(game_name)
+        #     assert idx > 0
+        #     # swap elements in list
+        #     self.games_list[idx],  self.games_list[idx-1] = self.games_list[idx-1], self.games_list[idx]
+        # else:
+        #     idx = self.ranked_games.index(game_name)
+        #     assert idx > 0
+
         return False
 
     def move_down(self, game_idx):

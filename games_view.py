@@ -5,7 +5,7 @@ from itertools import cycle
 from Ui_scrollbar_v2 import Ui_MainWindow
 
 from PyQt5.QtGui import QPixmap, QColor, QCursor
-from PyQt5.QtWidgets import QApplication, QMainWindow, QDialog, QLabel, QPushButton, QHBoxLayout, QWidget
+from PyQt5.QtWidgets import QApplication, QMainWindow, QDialog, QLabel, QPushButton, QHBoxLayout, QWidget, QMessageBox
 from PyQt5.QtCore import QTimer, pyqtSignal
 
 env_used = 'MiniGrid-Empty-6x6-v0'
@@ -43,7 +43,9 @@ class GamesView(QMainWindow):
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
         self.model = model
+        self.env = env
         self.counts = []
+
         self.game_layouts = []
         # TODO rank_layouts
         self.initUI(env)
@@ -83,6 +85,11 @@ class GamesView(QMainWindow):
         row.setObjectName(folder_name)
         horiz = QHBoxLayout(row)
 
+        # move btn case list 'rank'
+        if list_ == 'rank':
+            move_btn = QPushButton('<-')
+            horiz.addWidget(move_btn)
+
         # horiz = QHBoxLayout()
         # game name
         horiz.addWidget(QLabel(folder_name))
@@ -101,7 +108,7 @@ class GamesView(QMainWindow):
         # show trajectories in loop when click on it
         img_label = ClickLabel()
         img_label.setPixmap(pixmap)
-        # horiz.addWidget(label)
+
         timer = QTimer()
         counter = 1
         self.counts.append(counter)
@@ -117,15 +124,12 @@ class GamesView(QMainWindow):
         # delete game button
         delete_pb = QPushButton('delete')
         horiz.addWidget(delete_pb)
-        # delete_pb.clicked.connect(lambda: self.model.move_game('games', 0))
-        # sender = self.sender()
-        # delete_pb.clicked.connect(lambda: self.model.remove_game('games', idx))
 
-        # move game button
-        move_btn = QPushButton('->')
-        horiz.addWidget(move_btn)
-        # self.horizLayouts_g.append(horiz)
-        # horiz.setObjectName(folder_name)
+        # move game button case insertion in list 'games'
+        if list_ == 'games':
+            move_btn = QPushButton('->')
+            horiz.addWidget(move_btn)
+
 
         if list_ == 'games':
             self.ui.games_verticalLayout.addWidget(row)
@@ -136,16 +140,25 @@ class GamesView(QMainWindow):
             # print('index: ', self.game_layouts.index(game_idx))
 
             # self.game_layouts.index(item for item in self.game_layouts if item["layout"] == horiz)
-
-            # TODO fix  (this is just for games list)
-
         else:
-            self.ui.ranking_verticalLayout.addLayout(row)
+            self.ui.ranking_verticalLayout.addWidget(row)
 
-        delete_pb.clicked.connect(lambda: self.model.remove_game(row.objectName(),
-                                                                 ('games' if row.parent() == self.ui.games_verticalW else 'rank')))  # TODO check
+        # delete game push button
+        delete_pb.clicked.connect(lambda: self.confirm_delete_dialog(row))
 
-        move_btn.clicked.connect(lambda: self.model.move_game('games', self.game_layouts.index(horiz)))
+        # move game between lists push button
+        # move_btn.clicked.connect(lambda: print(row.objectName()))
+        move_btn.clicked.connect(lambda: self.model.move_game(('games' if row.parent().objectName() == 'games_verticalW' else 'rank'), row.objectName()))
+
+    def confirm_delete_dialog(self, row):
+        button_reply = QMessageBox.question(self, 'Confirm deletion', "Are you sure you want to delete " + str(row.objectName() + " ?"),
+                                           QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
+        if button_reply == QMessageBox.Yes:
+            self.model.remove_game(row.objectName(),
+                                   ('games' if row.parent() == self.ui.games_verticalW else 'rank'))
+            print('Yes clicked.')
+        else:
+            print('No clicked.')
 
     def initUI(self, env):
         """
@@ -176,19 +189,22 @@ class GamesView(QMainWindow):
         """
         # open window are you sure you want to delete?
         # then remove item from the list (and put to_delete = True)
-        # layout_to_remove = self.horizLayouts_g[game_idx] if current_list == 'games' else self.horizLayouts_r[game_idx]
 
-        l_item = self.ui.centralwidget.findChild(QWidget, folder_name).findChild(QHBoxLayout)
-        print(l_item)
+        w_item = self.ui.centralwidget.findChild(QWidget, folder_name)
+        # .findChild(QHBoxLayout)
         # l_item = self.ui.games_verticalLayout.itemAt(game_idx).layout() if current_list == 'games' else self.ui.ranking_verticalLayout.itemAt(game_idx).layout()
         # l_item = self.game_layouts[game_idx]
         # print(self.ui.games_verticalLayout.count(), len(self.game_layouts))
-        removed_widgets = self.clear_layout(l_item)
+        print(w_item.objectName())
+        removed_widgets = self.clear_layout(w_item)
+        print('removed_widgets: ', removed_widgets)
+        print(' ')
 
         return removed_widgets
 
-    def clear_layout(self, layout):
+    def clear_layout(self, widget_row):
         # self.game_layouts.remove(layout)
+        layout = widget_row.findChild(QHBoxLayout)
         removed = []
         if layout is not None:
             while layout.count():
@@ -199,23 +215,34 @@ class GamesView(QMainWindow):
                     widget.deleteLater()
                 else:
                     self.clearLayout(item.layout())
+                    print(item.layout())
+        widget_row.deleteLater()
         return removed
-
 
     def add_layout(self, layout, list_):
         curr_list = self.ui.games_verticalLayout if list_ == 'games' else self.ui.ranking_verticalLayout
         curr_list.addLayout(layout)
 
-    def move_game_gui(self, starting_list, game_idx_start_list):
-        # model, env, name, folder_name, list_= 'games'
+    def move_game_gui(self, dest_list_name, game_name):
+
         # TODO fix:
-        cur_list = self.ui.games_verticalLayout if starting_list == 'games' else self.ui.ranking_verticalLayout
-        removed_widgets = self.remove_game_from_gui(cur_list, game_idx_start_list)
-        print(removed_widgets)
-        dest_list = 'games' if starting_list == 'rank' else 'games'
-        self.add_row(env_used, 'ff', folder_name, 'rank')
+        print('game_name: ', game_name, 'dest list: ', dest_list_name)
+        self.remove_game_from_gui(game_name)
+
+        self.add_row(self.env, game_name, dest_list_name)
+
+        # l_item = self.ui.centralwidget.findChild(QWidget, game_name)
+        # # l_item.setParent(None)
+        # print(l_item.parent().objectName())
+        # l_item.setParent(self.ui.ranking_verticalW) if l_item.parent().objectName() == \
+        #                                                self.ui.games_verticalW.objectName() else l_item.setParent(self.ui.games_verticalW)
+
+        # cur_list = self.ui.games_verticalLayout if starting_list == 'games' else self.ui.ranking_verticalLayout
+        # removed_widgets = self.remove_game_from_gui(cur_list, game_idx_start_list)
+        # print(removed_widgets)
+        # dest_list = 'games' if starting_list == 'rank' else 'games'
+        # self.add_row(env_used, 'ff', folder_name, 'rank')
         # self.ui.games_verticalLayout.removeItem()
-        pass
 
     def move_game_up_gui(self, game_idx):
         #insertItem(index, a1)
