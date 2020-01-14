@@ -29,14 +29,20 @@ class PolicyNet(nn.Module):
         return (-distribution.log_prob(action) * discounted_reward).view(-1)
 
     @abstractmethod
-    def __init__(self, input_shape, num_actions, env):
+    def __init__(self, input_shape, num_actions, env, key=None):
         super(PolicyNet, self).__init__()
+        self.input_shape = input_shape
+        self.num_actions = num_actions
+        self.env = env
+        self.key = key
 
     @abstractmethod
     def forward(self, x):
         pass
 
-    def fit(self, episodes=100, batch_size=16, reward=None, render=False, autosave=False, episodes_for_checkpoint=None, output_folder="", reward_net_key=None):
+    def fit(self, episodes=100, batch_size=16, reward=None, render=False, autosave=False, episodes_for_checkpoint=None, output_folder="", reward_net_key=None, callbacks=[]):
+        # TODO: handle resume?
+        # TODO check why CPU is very slow
 
         ''' print info to open output directory and to open tensorboard '''
         print('output directory:\n"' + os.path.abspath(output_folder) + '"')
@@ -62,6 +68,10 @@ class PolicyNet(nn.Module):
 
         # clear all gradients
         self.optimizer.zero_grad()
+
+        for callback in callbacks:
+            if "on_train_begin" in callback:
+                callback["on_train_begin"](self.key)
 
         ''' begin training '''
         for episode in range(episodes):
@@ -136,11 +146,19 @@ class PolicyNet(nn.Module):
                 # save net weights
                 self.save_checkpoint(episode, output_folder)
 
+            for callback in callbacks:
+                if "on_episode_end" in callback:
+                    callback["on_episode_end"](self.key)
+
         ''' training ended '''
         tensorboard.close()
         # save net weights only if they haven't been saved in the last episode
         if autosave and (episodes_for_checkpoint is None or (episodes-1) % episodes_for_checkpoint != episodes_for_checkpoint-1):
             self.save_checkpoint(episodes-1, output_folder)
+
+        for callback in callbacks:
+            if "on_train_end" in callback:
+                callback["on_train_end"](self.key)
 
     ''' transform environment observation into neural network input '''
     def state_filter(self, state):

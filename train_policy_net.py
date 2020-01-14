@@ -19,7 +19,9 @@ default_env = "MiniGrid-Empty-6x6-v0"
 default_policy = "policy_nets/conv_policy/policy_net.py"
 
 
-def train_policy(env_name, policy_net=default_policy, reward_net_path=None, policy_net_key=None):
+def train_policy(env_name, policy_net=default_policy, reward_net_path=None, policy_net_key=None, callbacks=[]):
+
+    args_log = {"env_name": env_name, "policy": policy_net, "reward": reward_net_path}
 
     env = gym.make(env_name)
     input_shape = 1, 7, 7
@@ -58,7 +60,6 @@ def train_policy(env_name, policy_net=default_policy, reward_net_path=None, poli
 
     module_path, _ = policy_net.rsplit(".", 1)
     net_module = importlib.import_module(module_path.replace("/", "."))
-    policy_net = net_module.get_net(input_shape, num_actions, env).to(device)
 
     policy_net_dir = module_path.rsplit("/", 1)[0] if "/" in module_path else ""
     if policy_net_key is None:
@@ -66,9 +67,10 @@ def train_policy(env_name, policy_net=default_policy, reward_net_path=None, poli
     output_dir = os.path.join(policy_net_dir, env_name, policy_net_key)
     os.makedirs(output_dir)
     with open(os.path.join(output_dir, "args.json"), "wt") as file:
-        # TODO fix args not defined
-        json.dump(vars(args), file)
-    policy_net.fit(episodes=10000, reward=reward_net, autosave=True, output_folder=output_dir, episodes_for_checkpoint=250, reward_net_key=reward_net_key)
+        json.dump(args_log, file)
+
+    policy_net = net_module.get_net(input_shape, num_actions, env, policy_net_key).to(device)
+    policy_net.fit(episodes=10000, reward=reward_net, autosave=True, output_folder=output_dir, episodes_for_checkpoint=250, reward_net_key=reward_net_key, callbacks=callbacks)
 
     # # save trained policy_net net
     # torch.save(policy_net.state_dict(), options.output)

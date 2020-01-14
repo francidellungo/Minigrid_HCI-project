@@ -194,6 +194,9 @@ class AgentsWindow(QMainWindow):
         environment = self.ui.environments_tabs.currentWidget().objectName().split(self.sep)[0]
         self.games = GamesController(environment, self._model)
 
+
+    # TODO stop threads in TrainingManager on exit?
+
 if __name__== "__main__":
     app = QApplication(sys.argv)
     window = AgentsWindow()

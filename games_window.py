@@ -110,8 +110,8 @@ class GamesController:
         if self.agents_model is None:
             print("Error: agents_model is None")
             return
-        self.agents_model.create_agent(self.env, ["2019-12-17_23:20:25", "2019-12-17_23:19:35", "2019-12-17_23:17:48"]) # TODO cambiareeeeee (ottenere la lista da games_model)
-        # TODO: chiudere finestra se agent viene creato correttamente
+        self.agents_model.create_agent(self.env, self.games_model.ranked_games)
+        self.view.close()
 
 
 class NewGameView(QDialog):

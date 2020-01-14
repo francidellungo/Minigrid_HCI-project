@@ -92,6 +92,7 @@ def train_reward(env_name, reward_net_file=default_reward, games=None):
 
     # # save trained reward net
     # torch.save(reward_net.state_dict(), "reward_net.pth")
+    return output_dir
 
 
 if __name__ == "__main__":

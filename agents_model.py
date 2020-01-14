@@ -8,6 +8,7 @@ from PyQt5.QtCore import QObject, pyqtSignal, pyqtSlot, pyqtProperty
 from policy_nets.base_policy_net import PolicyNet
 from train_policy_net import train_policy
 from train_reward_net import train_reward
+from trainer import TrainingManager
 
 
 class AgentsModel(QObject):
@@ -59,9 +60,9 @@ class AgentsModel(QObject):
                         with open(trained_policy_info, 'rt') as file:
                             j = json.load(file)
                         j["path"] = trained_policy_dir
-                        if "reward_type" not in j or j["reward_type"] == "env" or "reward_key" not in j: # TODO rimuovere la prima parte dell'if
+                        if "reward_type" not in j or j["reward_type"] == "env" or "reward_net_key" not in j: # TODO rimuovere la prima parte dell'if
                             continue
-                        j["games"] = self.read_agent_games(env, j["reward_key"])
+                        j["games"] = self.read_agent_games(env, j["reward_net_key"])
                         self.add_agent(env, trained_policy, j)
                         agents_loaded += 1
                     except FileNotFoundError:
@@ -90,26 +91,26 @@ class AgentsModel(QObject):
         return True
 
     def create_agent(self, environment, games):
-        # TODO finire di sistemare
-        train_reward(environment, games=games)
-        policy_net_key = datetime.now().strftime("%Y-%m-%d_%H:%M:%S")
-        train_policy(environment, policy_net_key=policy_net_key)
-        self.add_agent(environment, policy_net_key)
-        # TODO threads?
+        TrainingManager.train_new_agent(environment, games, self, lambda key: self.add_agent(environment, key) or self.update_agent(environment, key))
 
     def add_agent(self, environment: str, agent_key: str, agent_value=None) -> bool:
-
-        # TODO gestire caso in cui agent_value=None
-
         if environment not in self._agents or agent_key in self._agents[environment]:
             return False
+
+        if agent_value is None:
+            agent_value = self.load_agent_value(environment, agent_key)
+
         self._agents[environment][agent_key] = agent_value
         self.agent_added.emit(environment, agent_key)
         return True
 
-    def update_agent(self, environment: str, agent_key: str, agent_value) -> bool:
+    def update_agent(self, environment: str, agent_key: str, agent_value=None) -> bool:
         if environment not in self._agents or agent_key not in self._agents[environment]:
             return False
+
+        if agent_value is None:
+            agent_value = self.load_agent_value(environment, agent_key)
+
         self._agents[environment][agent_key] = agent_value
         self.agent_updated.emit(environment, agent_key)
         return True
@@ -133,4 +134,17 @@ class AgentsModel(QObject):
             return j["games"]
         except FileNotFoundError:
             print("File not found: " + trained_reward_info)
+            return None
+
+    def load_agent_value(self, environment, agent_key):
+        trained_agent_dir = os.path.join(self.agents_dir, "conv_policy", environment, agent_key)  # TODO cambiare!!!!!! -> rimuovere "conv_reward"
+        trained_agent_info = os.path.join(trained_agent_dir, "training.json")
+        try:
+            with open(trained_agent_info, 'rt') as file:
+                j = json.load(file)
+            j["path"] = trained_agent_dir
+            j["games"] = self.read_agent_games(environment, j["reward_net_key"])
+            return j
+        except FileNotFoundError:
+            print("File not found: " + trained_agent_info)
             return None
