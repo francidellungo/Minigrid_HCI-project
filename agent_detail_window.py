@@ -2,14 +2,18 @@ import os
 import time
 from threading import Thread
 
+from itertools import cycle
 import gym
 import gym_minigrid
 from PyQt5 import QtGui
-from PyQt5.QtGui import QMovie
-from PyQt5.QtWidgets import QMainWindow, QMessageBox
+from PyQt5.QtCore import QTimer
+from PyQt5.QtGui import QMovie, QPixmap
+from PyQt5.QtWidgets import QMainWindow, QMessageBox, QHBoxLayout, QLabel, QPushButton, QWidget
 
 from agent_detail_ui import Ui_Agent
 from utils import load_last_policy, state_filter, get_last_policy_episode
+
+games_path = 'games'
 
 
 class AgentDetailWindow(QMainWindow):
@@ -72,8 +76,57 @@ class AgentDetailWindow(QMainWindow):
 
     def display_games(self):
         games = self.agents_model.get_agent(self.environment, self.agent_key)["games"]
-        # TODO usare questa lista di games per creare la grafica sulla destra
+        for game in games:
+            self.add_row(game)
 
+    def add_row(self, folder_name):
+        horiz = QHBoxLayout()
+        horiz.addWidget(QLabel(folder_name))
+        # pixmap = QPixmap(path_of_image + '0' + '.png')
+        pixmap = QPixmap('games/MiniGrid-Empty-6x6-v0/' + folder_name + '/game0.png')
+        # print(path_of_image + '0' + '.png')
+        img_label = QLabel()
+        img_label.setPixmap(pixmap)
+        horiz.addWidget(img_label)
+        horiz.addWidget(QPushButton('info'))
+        timer = QTimer()
+
+        dir_path = os.path.join(games_path, self.environment, folder_name)
+
+        img_label.enterEvent = lambda ev: self.show_traj_imgs(dir_path, img_label, timer)
+        img_label.leaveEvent = lambda ev: self.stop_show_traj(dir_path, img_label, timer)
+
+        self.ui.info_verticalLayout_2.addLayout(horiz)
+
+        # self.update_image(0)
+    def show_traj_imgs(self, games_dir, img_label, timer):
+        imgs_nums = [elem.split('game')[1].split('.')[0] for elem in os.listdir(games_dir) if elem.endswith(".png")]
+        imgs_nums.sort(key=int)
+        imgs = ['game' + str(img_num) + '.png' for img_num in imgs_nums]
+
+        imgs_cycle = cycle(imgs)
+
+        # show images in loop with only one timer.
+        timer.timeout.connect(lambda: self.on_timeout(os.path.join(games_dir, next(imgs_cycle)), img_label))
+        timer.start(250)
+
+
+    def stop_show_traj(self, games_dir, img_label, timer):
+        timer.stop()
+        # reinizialize image
+        imgs_nums = [elem.split('game')[1].split('.')[0] for elem in os.listdir(games_dir) if elem.endswith(".png")]
+        imgs_nums.sort(key=int)
+        imgs = ['game' + str(img_num) + '.png' for img_num in imgs_nums]
+        self.on_timeout(os.path.join(games_dir, imgs[0]), img_label)
+
+    def on_timeout(self, image, img_label):
+        try:
+            pixmap = QPixmap(image)
+            if not pixmap.isNull():
+                img_label.setPixmap(pixmap)
+        except StopIteration:
+            pass
+        #     self.timer.stop()
 
 class GameThread(Thread):
     def __init__(self, agents_model, environment, agent_name, game_qlabel):

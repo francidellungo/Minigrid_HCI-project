@@ -142,13 +142,13 @@
      </layout>
     </item>
     <item>
-     <layout class="QVBoxLayout" name="verticalLayout_2">
+     <layout class="QVBoxLayout" name="info_verticalLayout">
       <item>
-       <widget class="QScrollArea" name="scrollArea">
+       <widget class="QScrollArea" name="info_scrollArea">
         <property name="widgetResizable">
          <bool>true</bool>
         </property>
-        <widget class="QWidget" name="scrollAreaWidgetContents">
+        <widget class="QWidget" name="info_scrollAreaWidgetContents">
          <property name="geometry">
           <rect>
            <x>0</x>
@@ -157,6 +157,7 @@
            <height>324</height>
           </rect>
          </property>
+         <layout class="QVBoxLayout" name="info_verticalLayout_2"/>
         </widget>
        </widget>
       </item>
