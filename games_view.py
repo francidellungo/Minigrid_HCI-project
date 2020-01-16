@@ -4,7 +4,7 @@ from itertools import cycle
 
 from Ui_scrollbar_v2 import Ui_MainWindow
 
-from PyQt5.QtGui import QPixmap, QColor, QCursor
+from PyQt5.QtGui import QPixmap, QColor, QCursor, QIcon
 from PyQt5.QtWidgets import QApplication, QMainWindow, QDialog, QLabel, QPushButton, QHBoxLayout, QWidget, QMessageBox
 from PyQt5.QtCore import QTimer, pyqtSignal
 
@@ -104,13 +104,11 @@ class GamesView(QMainWindow):
 
         timer = QTimer()
 
-        # show trajectories in loop when pass on it with mouse
-        # TODO fix:
         # img_label.enterEvent = lambda ev: self.show_traj_imgs(dir_path, img_label, timer, self.counts.index(counter))
 
+        # show trajectories in loop when pass on it with mouse
         img_label.enterEvent = lambda ev: self.show_traj_imgs(dir_path, img_label, timer)
         img_label.leaveEvent = lambda ev: self.stop_show_traj(dir_path, img_label, timer)
-        # img_label.underMouse.connect(lambda: self.show_traj_imgs(dir_path, img_label, timer, self.counts.index(counter)))
 
         horiz.addWidget(img_label)
 
@@ -127,10 +125,14 @@ class GamesView(QMainWindow):
             horiz.addWidget(move_btn)
         else:
             # in 'rank' list
-            move_up_btn = QPushButton('move up')
+            move_up_btn = QPushButton()
             move_up_btn.setObjectName('move_up_btn')
-            move_down_btn = QPushButton('move down')
+            move_up_btn.setIcon(QIcon('img/arrowUp.jpeg'))
+            move_up_btn.setFixedWidth(30)
+            move_down_btn = QPushButton()
             move_down_btn.setObjectName('move_down_btn')
+            move_down_btn.setIcon(QIcon('img/arrowDown.jpeg'))
+            move_down_btn.setFixedWidth(30)
             horiz.addWidget(move_up_btn)
             horiz.addWidget(move_down_btn)
 
@@ -165,11 +167,6 @@ class GamesView(QMainWindow):
         self.check_enable_btn()
 
     def check_enable_btn(self):
-        # print(self.ui.ranking_verticalLayout.itemAt(0).widget().findChild(QPushButton, 'move_down_btn').objectName())
-        # self.ui.ranking_verticalLayout.itemAt(0).widget().findChild(QPushButton, 'move_down_btn').setEnabled(False)
-        # self.ui.ranking_verticalLayout.itemAt(0).widget().findChild(QPushButton, 'move_up_btn').setEnabled(False)
-        # self.ui.ranking_verticalLayout.itemAt(self.ui.ranking_verticalLayout.count() -1).widget().findChild(QPushButton, 'move_down_btn').setEnabled(False)
-
         # only 1 element in ranking list
         if self.ui.ranking_verticalLayout.count() == 1:
             self.ui.ranking_verticalLayout.itemAt(0).widget().findChild(QPushButton, 'move_up_btn').setEnabled(False)
@@ -177,17 +174,14 @@ class GamesView(QMainWindow):
             return
 
         for row_idx in range(self.ui.ranking_verticalLayout.count()):
-            print(row_idx)
+            # print(row_idx)
             if row_idx == 0:
-                print('row_idx == 0')
                 self.ui.ranking_verticalLayout.itemAt(row_idx).widget().findChild(QPushButton, 'move_up_btn').setEnabled(False)
                 self.ui.ranking_verticalLayout.itemAt(row_idx).widget().findChild(QPushButton, 'move_down_btn').setEnabled(True)
             elif row_idx == self.ui.ranking_verticalLayout.count() - 1:
-                print('row_idx == ', self.ui.ranking_verticalLayout.count() - 1)
                 self.ui.ranking_verticalLayout.itemAt(row_idx).widget().findChild(QPushButton, 'move_up_btn').setEnabled(True)
                 self.ui.ranking_verticalLayout.itemAt(row_idx).widget().findChild(QPushButton, 'move_down_btn').setEnabled(False)
             else:
-                print('row_idx in the middle')
                 self.ui.ranking_verticalLayout.itemAt(row_idx).widget().findChild(QPushButton, 'move_up_btn').setEnabled(True)
                 self.ui.ranking_verticalLayout.itemAt(row_idx).widget().findChild(QPushButton, 'move_down_btn').setEnabled(True)
 
@@ -264,7 +258,7 @@ class GamesView(QMainWindow):
 
     def move_game_gui(self, dest_list_name, game_name):
 
-        print('game_name: ', game_name, 'dest list: ', dest_list_name)
+        # print('game_name: ', game_name, 'dest list: ', dest_list_name)
         self.remove_game_from_gui(game_name)
 
         self.add_row(self.env, game_name, dest_list_name)
