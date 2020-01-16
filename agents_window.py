@@ -13,7 +13,7 @@ from agent_detail_window import AgentDetailWindow
 from agents_model import AgentsModel
 from agents_ui import Ui_Agents
 from games_window import GamesController
-from utils import get_last_policy_episode, get_all_environments
+from utils import get_all_environments
 
 
 class AgentsWindow(QMainWindow):
@@ -57,12 +57,11 @@ class AgentsWindow(QMainWindow):
         self.btn_add_env.clicked.connect(self.ask_for_new_environment)
         self.ui.environments_tabs.setCornerWidget(self.btn_add_env, Qt.TopRightCorner)
 
-
     def update_gui_from_model(self): # TODO rivedere
-        for env in self._model._agents:
+        for env in self._model.get_environments():
             self.add_environment_to_gui(env)
 
-            for agent in self._model._agents[env]:
+            for agent in self._model.get_agents(env):
                 self.add_agent_to_gui(env, agent) # TODO cambiare con riga sotto
                 #self.add_agent_to_gui(env, self._model.agents[env][agent]["name"])
 
@@ -151,9 +150,9 @@ class AgentsWindow(QMainWindow):
         self._model.agent_updated.connect(self.update_agent_on_gui)
 
     def update_agent_on_gui(self, environment, agent_name): # TODO rivedere
-        agent = self._model._agents[environment][agent_name]
-        max_episodes = agent["max_episodes"]
-        current_episode = get_last_policy_episode(agent["path"])
+        agent = self._model.get_agent(environment, agent_name)
+        max_episodes = agent.max_episodes
+        current_episode = agent.episode
 
         label_loading = self.ui.environments_tabs.findChild(QWidget, environment + self.sep + "env_tab_widget").\
             findChild(QLabel, environment + self.sep + agent_name + self.sep + "label_loading")

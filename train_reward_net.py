@@ -9,9 +9,10 @@ import torch
 from torchsummary import summary
 
 from reward_nets.base_reward_net import RewardNet
+from utils import get_input_shape
 
 default_env = 'MiniGrid-Empty-6x6-v0'
-default_reward = "reward_nets/conv_reward/reward_net.py"
+default_reward = "reward_nets/conv_reward.py"
 
 
 def split(my_list, split_fraction):
@@ -33,7 +34,6 @@ def train_reward(env_name, reward_net_file=default_reward, games=None):
         torch.backends.cudnn.benchmark = False
 
     ''' read all trajectories and create the training set as the set of trajectories ordered by score '''
-    input_shape = 1, 7, 7
     games_path = os.path.join(games_path, env_name)
 
     if games is None: # load all trajectories
@@ -68,19 +68,20 @@ def train_reward(env_name, reward_net_file=default_reward, games=None):
 
     # X_test = X_val
     module_path, _ = reward_net_file.rsplit(".", 1)
-    net_module = importlib.import_module(module_path.replace("/", "."))
-    reward_net = net_module.get_net(input_shape).to(device)
+    file_radix = os.path.basename(os.path.normpath(module_path))
+    net_module = importlib.import_module(".".join(module_path.split(os.sep)))
+    reward_net = net_module.get_net(get_input_shape()).to(device)
 
     print("summary")
-    summary(reward_net, input_shape, device=device)
+    summary(reward_net, get_input_shape(), device=device)
 
     # evaluate before training
     #reward_net.evaluate(X_test, [reward_net.quality])
 
     # training
-    reward_net_dir = module_path.rsplit("/", 1)[0] if "/" in module_path else ""
+    reward_net_dir = module_path.rsplit("/", 1)[0] if "/" in module_path else ""  # TODO linux only
     timestamp = datetime.now().strftime("%Y-%m-%d_%H:%M:%S")
-    output_dir = os.path.join(reward_net_dir, env_name, timestamp)
+    output_dir = os.path.join(reward_net_dir, env_name, file_radix + "|" + timestamp)
     reward_net.fit(X_train, max_epochs=20, X_val=X_val, output_folder=output_dir, train_games_info=train_games_info, val_games_info=val_games_info, autosave=True, epochs_for_checkpoint=10, train_games=games)
 
     # evaluate after training

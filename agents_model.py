@@ -1,14 +1,18 @@
+import importlib
+import pickle
 from datetime import datetime
 import json
 import os
 import shutil
 
+import torch
 from PyQt5.QtCore import QObject, pyqtSignal, pyqtSlot, pyqtProperty
 
 from policy_nets.base_policy_net import PolicyNet
 from train_policy_net import train_policy
 from train_reward_net import train_reward
 from trainer import TrainingManager
+from utils import get_input_shape, get_num_actions
 
 
 class AgentsModel(QObject):
@@ -25,6 +29,7 @@ class AgentsModel(QObject):
         self._agents = {}
         self.agents_dir = "policy_nets"
         self.rewards_dir = "reward_nets"
+        self.device = "cuda" if torch.cuda.is_available() else "cpu"
         self.load_from_disk()
 
     def load_from_disk(self):
@@ -51,13 +56,13 @@ class AgentsModel(QObject):
 
                 trained_policy_info = os.path.join(trained_policy_dir, "training.json")
                 try:
-                    with open(trained_policy_info, 'rt') as file:
-                        j = json.load(file)
-                    j["path"] = trained_policy_dir
-                    if "reward_type" not in j or j["reward_type"] == "env" or "reward_net_key" not in j: # TODO rimuovere la prima parte dell'if
-                        continue
-                    j["games"] = self.read_agent_games(env, j["reward_net_key"])
-                    self.add_agent(env, trained_policy, j)
+                    # with open(trained_policy_info, 'rt') as file:
+                    #     j = json.load(file)
+                    # j["path"] = trained_policy_dir
+                    # if "reward_type" not in j or j["reward_type"] == "env" or "reward_net_key" not in j: # TODO rimuovere la prima parte dell'if
+                    #     continue
+                    # j["games"] = self.read_agent_games(env, j["reward_net_key"])
+                    self.add_agent(env, trained_policy)
                     agents_loaded += 1
                 except FileNotFoundError:
                     print("File not found: " + trained_policy_info)
@@ -84,30 +89,26 @@ class AgentsModel(QObject):
         self.pop_environment(environment)
         return True
 
-
+    def get_environments(self):
+        return self._agents.keys()
 
     def create_agent(self, environment, games):
         TrainingManager.train_new_agent(environment, games, self, lambda key: self.add_agent(environment, key) or self.update_agent(environment, key))
 
-    def add_agent(self, environment: str, agent_key: str, agent_value=None) -> bool:
+    def add_agent(self, environment: str, agent_key: str, agent:PolicyNet=None) -> bool:
         if environment not in self._agents or agent_key in self._agents[environment]:
             return False
 
-        if agent_value is None:
-            agent_value = self.load_agent_value(environment, agent_key)
+        if agent is None:
+            agent = self.load_agent(environment, agent_key)
 
-        self._agents[environment][agent_key] = agent_value
+        self._agents[environment][agent_key] = agent
         self.agent_added.emit(environment, agent_key)
         return True
 
-    def update_agent(self, environment: str, agent_key: str, agent_value=None) -> bool:
+    def update_agent(self, environment: str, agent_key: str) -> bool:
         if environment not in self._agents or agent_key not in self._agents[environment]:
             return False
-
-        if agent_value is None:
-            agent_value = self.load_agent_value(environment, agent_key)
-
-        self._agents[environment][agent_key] = agent_value
         self.agent_updated.emit(environment, agent_key)
         return True
 
@@ -132,8 +133,17 @@ class AgentsModel(QObject):
             print("File not found: " + trained_reward_info)
             return None
 
+    def load_agent(self, environment, agent_key):
+        agent_dir = os.path.join(self.agents_dir, environment, agent_key)
+
+        # module_path, _ = policy_net_file.rsplit(".", 1)
+        # net_module = importlib.import_module(".".join(os.path.split(module_path)))
+        # reward_net = net_module.get_net(get_input_shape(), get_num_actions(), environment, agent_key, folder=agent_dir).to(self.device)
+        agent = pickle.load(open(os.path.join(agent_dir, "net.pkl"), "rb")).to(self.device)
+        return agent
+
     def load_agent_value(self, environment, agent_key):
-        trained_agent_dir = os.path.join(self.agents_dir, environment, agent_key)  # TODO cambiare!!!!!! -> rimuovere "conv_reward"
+        trained_agent_dir = os.path.join(self.agents_dir, environment, agent_key)
         trained_agent_info = os.path.join(trained_agent_dir, "training.json")
         try:
             with open(trained_agent_info, 'rt') as file:
@@ -144,3 +154,6 @@ class AgentsModel(QObject):
         except FileNotFoundError:
             print("File not found: " + trained_agent_info)
             return None
+
+    def get_agents(self, environment):
+        return self._agents[environment].keys()

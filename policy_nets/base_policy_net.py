@@ -1,5 +1,6 @@
 import io
 import os
+import pickle
 from abc import abstractmethod
 import json
 from contextlib import redirect_stdout
@@ -38,6 +39,8 @@ class PolicyNet(nn.Module):
         self.key = key
         self.episode = 0
         self.max_episodes = 0
+        self.reward_net_key = None
+        self.games = []
         if folder is None:
             folder = os.path.curdir
         self.folder = folder
@@ -54,6 +57,9 @@ class PolicyNet(nn.Module):
 
     def fit(self, episodes=100, batch_size=16, reward=None, render=False, autosave=False, episodes_for_checkpoint=None, reward_net_key=None, callbacks=[]):
         self.max_episodes = self.episode + episodes
+        self.reward_net_key = reward_net_key
+        if reward is not None:
+            self.games = reward.train_games
         # TODO check why CPU is very slow
 
         ''' print info to open output directory and to open tensorboard '''
@@ -64,7 +70,7 @@ class PolicyNet(nn.Module):
 
         ''' save info about this training in training.json, and also save the structure of the network '''
         self._save_training_details(reward, batch_size, reward_net_key)
-        torch.save(self, os.path.join(self.folder, "net.pth"))
+        self.save_network()
 
         ''' init metrics '''
         # used metrics:  loss, return, true_return, length
@@ -230,7 +236,7 @@ class PolicyNet(nn.Module):
                 summary(self, (1, 7, 7))
                 net_summary = out.getvalue()
             print(net_summary)
-            name = os.path.split(self.folder)[-1]
+            name = os.path.basename(os.path.normpath(self.folder))
             j = {"name": name, "type": str(type(self)), "str": str(self).replace("\n", ""), "reward_type": reward_type,
                        "batch_size": batch_size, "max_episodes": self.max_episodes, "summary": net_summary}
 
@@ -240,28 +246,35 @@ class PolicyNet(nn.Module):
 
             json.dump(j, file, indent=True)
 
+    def save_network(self):
+        # torch.save(self, os.path.join(self.folder, "net.pth"))
+        with open(os.path.join(self.folder, "net.pkl"), "wb") as file:
+            pickle.dump(self, file)
+        return self
+
     ''' save net weights (remark: only weights are saved here, not the network structure!) '''
     def save_checkpoint(self):
         if not os.path.exists(self.folder):
             os.makedirs(self.folder)
         checkpoints_file = os.path.join(self.folder, "policy_net-" + str(self.episode) + ".pth")
         torch.save(self.state_dict(), checkpoints_file)
+        return self
 
     def _load_last_checkpoint(self):
         # load the most recent weights from the folder of this policy
         episode_to_load_weights = self._get_last_saved_policy_episode()
 
-        policy_net = torch.load(os.path.join(self.folder, "net.pth"), map_location=self.current_device())
         if episode_to_load_weights is not None:
-            policy_net.load_state_dict(
+            self.load_state_dict(
                 torch.load(os.path.join(self.folder, "policy_net-" + str(episode_to_load_weights) + ".pth"),
                            map_location=self.current_device()))
 
             self.episode = episode_to_load_weights
             self.max_episodes = self._get_last_training_max_episodes()
+        else:
+            print("Error: cannot find saved weights")
 
-        policy_net = policy_net.to(self.current_device())
-        return policy_net
+        return self
 
     def _get_last_saved_policy_episode(self):
         epochs_saved_weights = [int(state.rsplit("-", 1)[1].split(".", 1)[0]) for state in glob(os.path.join(self.folder, "policy_net-*.pth"))]
@@ -273,3 +286,6 @@ class PolicyNet(nn.Module):
         with open(os.path.join(self.folder, "training.json"), "rt") as file:
             j = json.load(file)
         return j["max_episodes"]
+
+    def get_current_episode(self):
+        return self.episode

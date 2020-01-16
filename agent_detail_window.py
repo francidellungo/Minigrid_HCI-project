@@ -9,7 +9,6 @@ from PyQt5.QtGui import QMovie
 from PyQt5.QtWidgets import QMainWindow, QMessageBox
 
 from agent_detail_ui import Ui_Agent
-from utils import load_last_policy, state_filter, get_last_policy_episode
 
 
 class AgentDetailWindow(QMainWindow):
@@ -21,6 +20,7 @@ class AgentDetailWindow(QMainWindow):
         self.agents_model = agents_model
         self.environment = environment
         self.agent_key = agent_key
+        self.agent = self.agents_model.get_agent(self.environment, self.agent_key)
 
         # init UI
         self.ui = Ui_Agent()
@@ -38,13 +38,12 @@ class AgentDetailWindow(QMainWindow):
         self.display_games()
 
         # start the thread that plays minigrid with this agent (policy)
-        self.game_thread = GameThread(agents_model, environment, agent_key, self.ui.labelGame)
+        self.game_thread = GameThread(self.agent, environment, self.ui.labelGame)
         self.game_thread.start()
 
     def refresh_training_status(self):
-        agent = self.agents_model.get_agent(self.environment, self.agent_key)
-        max_episodes = agent["max_episodes"]
-        current_episode = get_last_policy_episode(agent["path"]) or 0
+        max_episodes = self.agent.max_episodes
+        current_episode = self.agent.get_current_episode()
 
         if current_episode + 1 == max_episodes: # +1 is used because episode count starts from 0
             self.ui.labelStatus.setText("Status: training completed")
@@ -72,16 +71,16 @@ class AgentDetailWindow(QMainWindow):
             self.close()
 
     def display_games(self):
-        games = self.agents_model.get_agent(self.environment, self.agent_key)["games"]
+        games = self.agents_model.get_agent(self.environment, self.agent_key).games
         # TODO usare questa lista di games per creare la grafica sulla destra
 
 
 class GameThread(Thread):
-    def __init__(self, agents_model, environment, agent_name, game_qlabel):
+    def __init__(self, agent, environment, game_qlabel):
         Thread.__init__(self)
         self.game_widget = game_qlabel
         self.env = gym.make(environment)
-        self.agent = load_last_policy(agents_model.get_agent(environment, agent_name)["path"])
+        self.agent = agent
         self._running = True
 
     def run(self):
@@ -104,7 +103,7 @@ class GameThread(Thread):
                 done = False
                 continue
 
-            action = self.agent.sample_action(state_filter(self.agent, state))
+            action = self.agent.sample_action(self.agent.state_filter(state))
             state, reward, done, info = self.env.step(action)
 
     def interrupt(self):

@@ -2,6 +2,7 @@ import copy
 import io
 import json
 import os
+import pickle
 from abc import abstractmethod
 from contextlib import redirect_stdout
 import matplotlib.pyplot as plt
@@ -77,12 +78,15 @@ class RewardNet(nn.Module):
     @abstractmethod
     def __init__(self, input_shape, lr=1e-4):
         super(RewardNet, self).__init__()
+        self.train_games = None
 
     @abstractmethod
     def forward(self, x):
         pass
 
     def fit(self, X_train, max_epochs=1000, batch_size=16, num_subtrajectories=7, subtrajectory_length=3, X_val=None, output_folder="", use_also_complete_trajectories=True, train_games_info=None, val_games_info=None, autosave=False, epochs_for_checkpoint=None, train_games=None):
+
+        self.train_games = train_games
 
         ''' print info to open output directory and to open tensorboard '''
         print('output directory:\n"' + os.path.abspath(output_folder) + '"')
@@ -92,7 +96,8 @@ class RewardNet(nn.Module):
 
         ''' save info about this training in training.json, and also save the structure of the network '''
         self.save_training_details(output_folder, batch_size, num_subtrajectories, subtrajectory_length, use_also_complete_trajectories, train_games)
-        torch.save(self, os.path.join(output_folder, "net.pth"))
+        #torch.save(self, os.path.join(output_folder, "net.pth"))
+        pickle.dump(self, open(os.path.join(output_folder, "net.pkl"), "wb"))
 
         # TODO ha senso che subtrajectory_length invece di una costante sia un range entro il quale scegliere a random la lunghezza della sottotraiettoria?
         # TODO bisogna capire quale è un buon modo per scegliere tutti questi iperparametri delle sottotraiettorie
