@@ -8,9 +8,9 @@ from utils import conv_output_size
 
 class ConvPolicyNet(PolicyNet):
 
-    def __init__(self, input_shape, num_actions, env, key=None):
+    def __init__(self, input_shape, num_actions, env, key=None, folder=None):
         # TODO sistemare signature di costruttore e init
-        super(ConvPolicyNet, self).__init__(input_shape, num_actions, env, key)
+        super(ConvPolicyNet, self).__init__(input_shape, num_actions, env, key, folder)
         self.conv = nn.Conv2d(1, 64, 2)
         o = conv_output_size(input_shape[1], 2, 0, 1)
         self.fc = nn.Linear(64 * o * o, num_actions)

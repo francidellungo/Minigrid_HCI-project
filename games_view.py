@@ -337,13 +337,12 @@ class GamesView(QMainWindow):
 
         imgs_cycle = cycle(imgs)
 
-        timer.timeout.connect(lambda: self.update_image(os.path.join(games_dir, next(imgs_cycle)), img_label, imgs, timer, count_idx))
+        #timer.timeout.connect(lambda: self.update_image(os.path.join(games_dir, next(imgs_cycle)), img_label, imgs, timer, count_idx))
 
         # timer.timeout.connect(lambda: self.check_timer_end(self.counter, imgs, self))
         timer.start(250)
         # self.update_image(os.path.join(games_dir, imgs[self.img_idx]), img_label)
         self.update_image(os.path.join(games_dir, next(imgs_cycle)), img_label, imgs, timer, count_idx)
-
 
     def update_image(self, image, img_label, imgs, timer, count_idx):
         # TODO fix

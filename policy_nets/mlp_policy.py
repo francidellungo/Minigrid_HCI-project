@@ -8,9 +8,9 @@ from utils import conv_output_size
 
 class MlpPolicyNet(PolicyNet):
 
-    def __init__(self, input_shape, num_actions, env, key=None):
+    def __init__(self, input_shape, num_actions, env, key=None, folder=None):
         # TODO sistemare signature di costruttore e init
-        super(MlpPolicyNet, self).__init__(input_shape, num_actions, env, key)
+        super(MlpPolicyNet, self).__init__(input_shape, num_actions, env, key, folder)
 
         self.affine1 = nn.Linear(7*7, 100)
         self.affine2 = nn.Linear(100, num_actions)

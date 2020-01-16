@@ -29,6 +29,7 @@ class AgentDetailWindow(QMainWindow):
 
         # update text label and gif label of training status (completed / training)
         self.refresh_training_status()
+        self.agents_model.agent_updated.connect(lambda env, ag: self.refresh_training_status() if env==self.environment and ag==self.agent_key else lambda: ...)
 
         # link slot to delete the agent
         self.ui.btnDeleteAgent.clicked.connect(self.delete)
