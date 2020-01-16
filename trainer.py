@@ -12,7 +12,7 @@ class TrainingManager:
     def train_new_agent(environment, games, agents_model, on_episode_end):
         callbacks = [{
             "on_episode_end": on_episode_end,
-            "on_train_end": lambda key: TrainingManager.threads.remove(th) and agents_model.add_agent(environment, key)
+            "on_train_end": lambda agent: TrainingManager.threads.remove(th) and agents_model.add_agent(environment, agent.key)
         }]
         th = TrainerThread(environment, games, callbacks)
         TrainingManager.threads.append(th)
