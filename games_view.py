@@ -65,8 +65,7 @@ class GamesView(QMainWindow):
     #     self.ui.verticalLayout_2.addLayout(horiz)
     #     # self.update_image(0)
 
-    # TODO fix: add model
-    def add_row(self, env, folder_name, list_='games', position = None):
+    def add_row(self, env, folder_name, list_='games', position=None):
         """
         add row for a new game to games gui
         :param position: index of the position to insert the new row in the layout list
@@ -104,14 +103,13 @@ class GamesView(QMainWindow):
         img_label.setPixmap(pixmap)
 
         timer = QTimer()
-        counter = 1
-        self.counts.append(counter)
-        self.counts.index(counter)
-        # print('self.counts.index(self.counter)', self.counts.index(counter))
 
         # show trajectories in loop when pass on it with mouse
         # TODO fix:
-        img_label.enterEvent = lambda ev: self.show_traj_imgs(dir_path, img_label, timer, self.counts.index(counter))
+        # img_label.enterEvent = lambda ev: self.show_traj_imgs(dir_path, img_label, timer, self.counts.index(counter))
+
+        img_label.enterEvent = lambda ev: self.show_traj_imgs(dir_path, img_label, timer)
+        img_label.leaveEvent = lambda ev: self.stop_show_traj(dir_path, img_label, timer)
         # img_label.underMouse.connect(lambda: self.show_traj_imgs(dir_path, img_label, timer, self.counts.index(counter)))
 
         horiz.addWidget(img_label)
@@ -141,11 +139,7 @@ class GamesView(QMainWindow):
         if list_ == 'games':
             self.ui.games_verticalLayout.addWidget(row)
             # game_idx = [item['layout'] for item in self.game_layouts if item['layout'] == horiz]
-            # print(game_idx, horiz)
-            # [item['layout'] for item in self.game_layouts if item["layout"] == horiz]
-            # print('index: ', self.game_layouts.index(game_idx))
 
-            # self.game_layouts.index(item for item in self.game_layouts if item["layout"] == horiz)
         else:
             if position is None:
                 self.ui.ranking_verticalLayout.addWidget(row)
@@ -158,29 +152,19 @@ class GamesView(QMainWindow):
 
         # move game between lists push button
         move_btn.clicked.connect(lambda: self.model.move_game(('games' if row.parent().objectName() == 'games_verticalW' else 'rank'), row.objectName()))
-        # move_btn.clicked.connect(self.check_enable_btn)
 
         if list_ == 'rank':
             # connect move up and down buttons (in ranking list)
             move_up_btn.clicked.connect(lambda: self.model.move_up(folder_name))
-            print(self.ui.ranking_verticalLayout.indexOf(self.ui.ranking_verticalW.findChild(QWidget, folder_name)))
             move_up_btn.setEnabled(True)
             # move_down_btn.clicked.connect(self.check_enable_btn)
 
             move_down_btn.clicked.connect(lambda: self.model.move_down(folder_name))
             # move_down_btn.clicked.connect(self.check_enable_btn)
-            # for row in self.ui.ranking_verticalLayout
-            # if row.indexOf(self.ui.ranking_verticalW.findChild(QWidget, folder_name)) == 0:
-            # print(' # elementi in ranking list: ', self.ui.ranking_verticalLayout.count())
             move_down_btn.setEnabled(True)
         self.check_enable_btn()
-        print(' # elementi in ranking list: ', self.ui.ranking_verticalLayout.count())
-        # # move up and down games in ranking list
-        # move_up_btn.clicked.connect(lambda: self.model.move_up(folder_name))
-        # move_down_btn.clicked.connect(lambda: self.model.move_up(folder_name))
 
     def check_enable_btn(self):
-        print('numero elementi quando chiamo check enable: ', self.ui.ranking_verticalLayout.count())
         # print(self.ui.ranking_verticalLayout.itemAt(0).widget().findChild(QPushButton, 'move_down_btn').objectName())
         # self.ui.ranking_verticalLayout.itemAt(0).widget().findChild(QPushButton, 'move_down_btn').setEnabled(False)
         # self.ui.ranking_verticalLayout.itemAt(0).widget().findChild(QPushButton, 'move_up_btn').setEnabled(False)
@@ -209,16 +193,15 @@ class GamesView(QMainWindow):
 
         # self.ui.ranking_verticalW.findChild(QPushButton, 'move_up_btn').setEnabled(False)
 
-
     def confirm_delete_dialog(self, row):
         button_reply = QMessageBox.question(self, 'Confirm deletion', "Are you sure you want to delete " + str(row.objectName() + " ?"),
                                            QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
         if button_reply == QMessageBox.Yes:
             self.model.remove_game(row.objectName(),
                                    ('games' if row.parent() == self.ui.games_verticalW else 'rank'))
-            print('Yes clicked.')
-        else:
-            print('No clicked.')
+            # print('Yes clicked.')
+        # else:
+            # print('No clicked.')
 
     def initUI(self, env):
         """
@@ -279,10 +262,6 @@ class GamesView(QMainWindow):
         widget_row.parent().layout().removeWidget(widget_row)
         return removed
 
-    # def add_layout(self, layout, list_):
-    #     curr_list = self.ui.games_verticalLayout if list_ == 'games' else self.ui.ranking_verticalLayout
-    #     curr_list.addLayout(layout)
-
     def move_game_gui(self, dest_list_name, game_name):
 
         print('game_name: ', game_name, 'dest list: ', dest_list_name)
@@ -321,48 +300,42 @@ class GamesView(QMainWindow):
         self.add_row(self.env, game_name, list_='rank', position=old_idx + 1)
         # self.check_enable_btn()
 
-    def get_items_in_list(self, list ='games'):
-        if list == 'games':
-            games_items = (self.ui.games_verticalLayout.itemAt(i) for i in range(self.ui.games_verticalLayout.count()))
-        else:
-            games_items = (self.ui.ranking_verticalLayout.itemAt(i) for i in range(self.ui.ranking_verticalLayout.count()))
-        return games_items
+    # def get_items_in_list(self, list ='games'):
+    #     if list == 'games':
+    #         games_items = (self.ui.games_verticalLayout.itemAt(i) for i in range(self.ui.games_verticalLayout.count()))
+    #     else:
+    #         games_items = (self.ui.ranking_verticalLayout.itemAt(i) for i in range(self.ui.ranking_verticalLayout.count()))
+    #     return games_items
 
-    def show_traj_imgs(self, games_dir, img_label, timer, count_idx):
-        # timer = QTimer(self)
-        # TODO fix: maybe use just 1 timer, not 1 for each
+    def show_traj_imgs(self, games_dir, img_label, timer):
         imgs_nums = [elem.split('game')[1].split('.')[0] for elem in os.listdir(games_dir) if elem.endswith(".png")]
         imgs_nums.sort(key=int)
         imgs = ['game' + str(img_num) + '.png' for img_num in imgs_nums]
 
         imgs_cycle = cycle(imgs)
 
-        #timer.timeout.connect(lambda: self.update_image(os.path.join(games_dir, next(imgs_cycle)), img_label, imgs, timer, count_idx))
-
-        # timer.timeout.connect(lambda: self.check_timer_end(self.counter, imgs, self))
+        # show images in loop with only one timer.
+        timer.timeout.connect(lambda: self.on_timeout(os.path.join(games_dir, next(imgs_cycle)), img_label))
         timer.start(250)
-        # self.update_image(os.path.join(games_dir, imgs[self.img_idx]), img_label)
-        self.update_image(os.path.join(games_dir, next(imgs_cycle)), img_label, imgs, timer, count_idx)
 
-    def update_image(self, image, img_label, imgs, timer, count_idx):
-        # TODO fix
-        # img_num = image.split("/")[-1].split('game')[1].split('.')[0]
-        # print(img_num, len(imgs)-1)
-        # if img_num == len(imgs)-1:
-        #     timer.stop()
-        pixmap = QPixmap(image)
 
-        if not pixmap.isNull():
-            # print('update image')
-            img_label.setPixmap(pixmap)
-            self.counts[count_idx] += 1
-            # self.label.adjustSize()
-            # self.resize(pixmap.size())
+    def stop_show_traj(self, games_dir, img_label, timer):
+        timer.stop()
+        # reinizialize image
+        imgs_nums = [elem.split('game')[1].split('.')[0] for elem in os.listdir(games_dir) if elem.endswith(".png")]
+        imgs_nums.sort(key=int)
+        imgs = ['game' + str(img_num) + '.png' for img_num in imgs_nums]
+        self.on_timeout(os.path.join(games_dir, imgs[0]), img_label)
 
-        if self.counts[count_idx] == len(imgs) + 1:
-            timer.stop()
-            self.counts[count_idx] = 0
-            return
+    def on_timeout(self, image, img_label):
+        try:
+            pixmap = QPixmap(image)
+            if not pixmap.isNull():
+                img_label.setPixmap(pixmap)
+        except StopIteration:
+            pass
+        #     self.timer.stop()
+
 
 # if __name__ == '__main__':
 #     app = QApplication(sys.argv)

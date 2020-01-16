@@ -2,13 +2,11 @@
 
 # Form implementation generated from reading ui file 'agent_detail.ui'
 #
-# Created by: PyQt5 UI code generator 5.13.2
+# Created by: PyQt5 UI code generator 5.9.2
 #
 # WARNING! All changes made in this file will be lost!
 
-
 from PyQt5 import QtCore, QtGui, QtWidgets
-
 
 class Ui_Agent(object):
     def setupUi(self, Agent):
@@ -87,17 +85,19 @@ class Ui_Agent(object):
         self.horizontalLayout_2.addWidget(self.btnDeleteAgent)
         self.verticalLayout.addWidget(self.horizontalWidget1)
         self.horizontalLayout.addLayout(self.verticalLayout)
-        self.verticalLayout_2 = QtWidgets.QVBoxLayout()
-        self.verticalLayout_2.setObjectName("verticalLayout_2")
-        self.scrollArea = QtWidgets.QScrollArea(self.centralwidget)
-        self.scrollArea.setWidgetResizable(True)
-        self.scrollArea.setObjectName("scrollArea")
-        self.scrollAreaWidgetContents = QtWidgets.QWidget()
-        self.scrollAreaWidgetContents.setGeometry(QtCore.QRect(0, 0, 341, 324))
-        self.scrollAreaWidgetContents.setObjectName("scrollAreaWidgetContents")
-        self.scrollArea.setWidget(self.scrollAreaWidgetContents)
-        self.verticalLayout_2.addWidget(self.scrollArea)
-        self.horizontalLayout.addLayout(self.verticalLayout_2)
+        self.info_verticalLayout = QtWidgets.QVBoxLayout()
+        self.info_verticalLayout.setObjectName("info_verticalLayout")
+        self.info_scrollArea = QtWidgets.QScrollArea(self.centralwidget)
+        self.info_scrollArea.setWidgetResizable(True)
+        self.info_scrollArea.setObjectName("info_scrollArea")
+        self.info_scrollAreaWidgetContents = QtWidgets.QWidget()
+        self.info_scrollAreaWidgetContents.setGeometry(QtCore.QRect(0, 0, 341, 324))
+        self.info_scrollAreaWidgetContents.setObjectName("info_scrollAreaWidgetContents")
+        self.info_verticalLayout_2 = QtWidgets.QVBoxLayout(self.info_scrollAreaWidgetContents)
+        self.info_verticalLayout_2.setObjectName("info_verticalLayout_2")
+        self.info_scrollArea.setWidget(self.info_scrollAreaWidgetContents)
+        self.info_verticalLayout.addWidget(self.info_scrollArea)
+        self.horizontalLayout.addLayout(self.info_verticalLayout)
         Agent.setCentralWidget(self.centralwidget)
         self.menubar = QtWidgets.QMenuBar(Agent)
         self.menubar.setGeometry(QtCore.QRect(0, 0, 715, 22))
@@ -117,3 +117,4 @@ class Ui_Agent(object):
         self.labelLoading.setText(_translate("Agent", "x"))
         self.progressBarTraining.setFormat(_translate("Agent", "%v/%m"))
         self.btnDeleteAgent.setText(_translate("Agent", "Delete agent"))
+
