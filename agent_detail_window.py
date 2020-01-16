@@ -69,7 +69,7 @@ class AgentDetailWindow(QMainWindow):
     def delete(self):
         reply = QMessageBox.question(self, "Delete agent", "Are you sure to delete this agent?", QMessageBox.Yes | QMessageBox.No)
         if reply == QMessageBox.Yes:
-            print("deleting: " + self.agents_model.get_agent(self.environment, self.agent_key)["path"])
+            print("deleting: " + self.agents_model.get_agent(self.environment, self.agent_key).folder)
             self.agents_model.delete_agent(self.environment, self.agent_key)
             print("successfully deleted")
             self.close()
@@ -77,7 +77,6 @@ class AgentDetailWindow(QMainWindow):
     def display_games(self):
         games = self.agents_model.get_agent(self.environment, self.agent_key).games
         # TODO usare questa lista di games per creare la grafica sulla destra
-        games = self.agents_model.get_agent(self.environment, self.agent_key)["games"]
         for game in games:
             self.add_row(game)
 
