@@ -32,41 +32,35 @@ class AgentsModel(QObject):
         agents_loaded = 0
         envs_loaded = 0
 
-        # for each policy
-        for el in os.listdir(self.agents_dir):
-            policy_dir = os.path.join(self.agents_dir, el)
-            if not os.path.isdir(policy_dir) or el == "__pycache__":
+        # for each environment
+        for env in os.listdir(self.agents_dir):
+            env_dir = os.path.join(self.agents_dir, env)
+            if not os.path.isdir(env_dir) or env == "__pycache__":
                 continue
 
-            # for each environment
-            for env in os.listdir(policy_dir):
-                env_dir = os.path.join(policy_dir, env)
-                if not os.path.isdir(env_dir) or env == "__pycache__":
+            # env is a name (string) of an environment
+            if env not in self._agents:
+                self.add_environment(env)
+                envs_loaded += 1
+
+            # for each trained policy (of this type and in this environment)
+            for trained_policy in os.listdir(env_dir):
+                trained_policy_dir = os.path.join(env_dir, trained_policy)
+                if not os.path.isdir(trained_policy_dir):
                     continue
 
-                # env is a name (string) of an environment
-                if env not in self._agents:
-                    self.add_environment(env)
-                    envs_loaded += 1
-
-                # for each trained policy (of this type and in this environment)
-                for trained_policy in os.listdir(env_dir):
-                    trained_policy_dir = os.path.join(env_dir, trained_policy)
-                    if not os.path.isdir(trained_policy_dir):
+                trained_policy_info = os.path.join(trained_policy_dir, "training.json")
+                try:
+                    with open(trained_policy_info, 'rt') as file:
+                        j = json.load(file)
+                    j["path"] = trained_policy_dir
+                    if "reward_type" not in j or j["reward_type"] == "env" or "reward_net_key" not in j: # TODO rimuovere la prima parte dell'if
                         continue
-
-                    trained_policy_info = os.path.join(trained_policy_dir, "training.json")
-                    try:
-                        with open(trained_policy_info, 'rt') as file:
-                            j = json.load(file)
-                        j["path"] = trained_policy_dir
-                        if "reward_type" not in j or j["reward_type"] == "env" or "reward_net_key" not in j: # TODO rimuovere la prima parte dell'if
-                            continue
-                        j["games"] = self.read_agent_games(env, j["reward_net_key"])
-                        self.add_agent(env, trained_policy, j)
-                        agents_loaded += 1
-                    except FileNotFoundError:
-                        print("File not found: " + trained_policy_info)
+                    j["games"] = self.read_agent_games(env, j["reward_net_key"])
+                    self.add_agent(env, trained_policy, j)
+                    agents_loaded += 1
+                except FileNotFoundError:
+                    print("File not found: " + trained_policy_info)
 
         print("loaded {} agents from {} environments".format(agents_loaded, envs_loaded))
 
@@ -89,6 +83,8 @@ class AgentsModel(QObject):
             return False
         self.pop_environment(environment)
         return True
+
+
 
     def create_agent(self, environment, games):
         TrainingManager.train_new_agent(environment, games, self, lambda key: self.add_agent(environment, key) or self.update_agent(environment, key))
@@ -137,7 +133,7 @@ class AgentsModel(QObject):
             return None
 
     def load_agent_value(self, environment, agent_key):
-        trained_agent_dir = os.path.join(self.agents_dir, "conv_policy", environment, agent_key)  # TODO cambiare!!!!!! -> rimuovere "conv_reward"
+        trained_agent_dir = os.path.join(self.agents_dir, environment, agent_key)  # TODO cambiare!!!!!! -> rimuovere "conv_reward"
         trained_agent_info = os.path.join(trained_agent_dir, "training.json")
         try:
             with open(trained_agent_info, 'rt') as file:

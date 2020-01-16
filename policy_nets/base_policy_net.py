@@ -3,6 +3,7 @@ import os
 from abc import abstractmethod
 import json
 from contextlib import redirect_stdout
+from glob import glob
 
 import torch
 import torch.nn as nn
@@ -29,34 +30,45 @@ class PolicyNet(nn.Module):
         return (-distribution.log_prob(action) * discounted_reward).view(-1)
 
     @abstractmethod
-    def __init__(self, input_shape, num_actions, env, key=None):
+    def __init__(self, input_shape, num_actions, env, key=None, folder=None, resume=True):
         super(PolicyNet, self).__init__()
         self.input_shape = input_shape
         self.num_actions = num_actions
         self.env = env
         self.key = key
+        self.episode = 0
+        self.max_episodes = 0
+        if folder is None:
+            folder = os.path.curdir
+        self.folder = folder
+
+        if resume:
+            self._load_last_checkpoint()
 
     @abstractmethod
     def forward(self, x):
         pass
 
-    def fit(self, episodes=100, batch_size=16, reward=None, render=False, autosave=False, episodes_for_checkpoint=None, output_folder="", reward_net_key=None, callbacks=[]):
-        # TODO: handle resume?
+    def current_device(self):
+        return next(self.parameters()).device
+
+    def fit(self, episodes=100, batch_size=16, reward=None, render=False, autosave=False, episodes_for_checkpoint=None, reward_net_key=None, callbacks=[]):
+        self.max_episodes = self.episode + episodes
         # TODO check why CPU is very slow
 
         ''' print info to open output directory and to open tensorboard '''
-        print('output directory:\n"' + os.path.abspath(output_folder) + '"')
-        tb_path = os.path.abspath(os.path.join(output_folder, "tensorboard"))
+        print('output directory:\n"' + os.path.abspath(self.folder) + '"')
+        tb_path = os.path.abspath(os.path.join(self.folder, "tensorboard"))
         print('to visualize training progress:\n`tensorboard --logdir="{}"`'.format(tb_path))
         tensorboard = SummaryWriter(tb_path)
 
         ''' save info about this training in training.json, and also save the structure of the network '''
-        self.save_training_details(output_folder, reward, batch_size, episodes, reward_net_key)
-        torch.save(self, os.path.join(output_folder, "net.pth"))
+        self._save_training_details(reward, batch_size, reward_net_key)
+        torch.save(self, os.path.join(self.folder, "net.pth"))
 
         ''' init metrics '''
         # used metrics:  loss, return, true_return, length
-        batch_avg_loss = torch.zeros(1).to(next(self.parameters()).device)
+        batch_avg_loss = torch.zeros(1).to(self.current_device())
         batch_avg_return = 0
         batch_avg_true_return = 0
         batch_avg_length = 0
@@ -74,10 +86,9 @@ class PolicyNet(nn.Module):
                 callback["on_train_begin"](self.key)
 
         ''' begin training '''
-        for episode in range(episodes):
+        for self.episode in range(self.episode, self.max_episodes):
 
-            #ep_loss = torch.zeros(1).to(next(self.parameters()).device)
-            episode_loss = torch.zeros(1).to(next(self.parameters()).device)
+            episode_loss = torch.zeros(1).to(self.current_device())
             while True:
                 ''' run an episode '''
                 states, actions, true_rewards, rewards, discounted_rewards, length = self.run_episode(max_length=100, reward_net=reward, render=render)
@@ -108,7 +119,7 @@ class PolicyNet(nn.Module):
             batch_avg_length += length
 
             # if this is the last episode of the batch
-            if episode % batch_size == batch_size-1:
+            if self.episode % batch_size == batch_size-1:
                 ''' backpropagation and optimizer step to update net weights '''
                 batch_avg_loss /= batch_size
                 batch_avg_loss.backward()
@@ -127,24 +138,25 @@ class PolicyNet(nn.Module):
 
                 # print all metrics
                 print("episode: {},  batch_avg_loss: {:7.4f},  batch_avg_length: {:7.4f},  running_batch_avg_length: {:7.4f},  batch_avg_return: {:7.4f},  running_batch_avg_return: {:7.4f},  batch_avg_true_return: {:7.4f},  running_batch_avg_true_return: {:7.4f}"
-                      .format(episode, batch_avg_loss.item(), batch_avg_length, running_batch_avg_length, batch_avg_return, running_batch_avg_return, batch_avg_true_return, running_batch_avg_true_return))
+                      .format(self.episode, batch_avg_loss.item(), batch_avg_length, running_batch_avg_length, batch_avg_return, running_batch_avg_return, batch_avg_true_return, running_batch_avg_true_return))
 
                 # save all metrics for tensorboard
-                tensorboard.add_scalars("loss", {"batch_avg": batch_avg_loss.item()}, episode)
-                tensorboard.add_scalars("return", {"batch_avg": batch_avg_return, "running_batch_avg": running_batch_avg_return}, episode)
-                tensorboard.add_scalars("true_return", {"batch_avg": batch_avg_true_return, "running_batch_avg": running_batch_avg_true_return}, episode)
-                tensorboard.add_scalars("length", {"batch_avg": batch_avg_length, "running_batch_avg": running_batch_avg_length}, episode)
+                tensorboard.add_scalars("loss", {"batch_avg": batch_avg_loss.item()}, self.episode)
+                tensorboard.add_scalars("return", {"batch_avg": batch_avg_return, "running_batch_avg": running_batch_avg_return}, self.episode)
+                tensorboard.add_scalars("true_return", {"batch_avg": batch_avg_true_return, "running_batch_avg": running_batch_avg_true_return}, self.episode)
+                tensorboard.add_scalars("length", {"batch_avg": batch_avg_length, "running_batch_avg": running_batch_avg_length}, self.episode)
 
                 # re-init all metrics
-                batch_avg_loss = torch.zeros(1).to(next(self.parameters()).device)
+                batch_avg_loss = torch.zeros(1).to(self.current_device())
                 batch_avg_return = 0
                 batch_avg_true_return = 0
                 batch_avg_length = 0
 
             # check if I have to save the net weights in this episode
-            if autosave and episodes_for_checkpoint is not None and episode % episodes_for_checkpoint == episodes_for_checkpoint -1:
-                # save net weights
-                self.save_checkpoint(episode, output_folder)
+            if autosave:
+                if (episodes_for_checkpoint is not None and self.episode % episodes_for_checkpoint == episodes_for_checkpoint -1) or self.episode==self.max_episodes-1:
+                    # save net weights
+                    self.save_checkpoint()
 
             for callback in callbacks:
                 if "on_episode_end" in callback:
@@ -152,9 +164,6 @@ class PolicyNet(nn.Module):
 
         ''' training ended '''
         tensorboard.close()
-        # save net weights only if they haven't been saved in the last episode
-        if autosave and (episodes_for_checkpoint is None or (episodes-1) % episodes_for_checkpoint != episodes_for_checkpoint-1):
-            self.save_checkpoint(episodes-1, output_folder)
 
         for callback in callbacks:
             if "on_train_end" in callback:
@@ -162,7 +171,7 @@ class PolicyNet(nn.Module):
 
     ''' transform environment observation into neural network input '''
     def state_filter(self, state):
-        return torch.from_numpy(state['image'][:, :, 0]).float().to(next(self.parameters()).device) # TODO considerare tutti i canali invece che solo il primo?
+        return torch.from_numpy(state['image'][:, :, 0]).float().to(self.current_device()) # TODO considerare tutti i canali invece che solo il primo?
 
     ''' sample an action from the distribution given by the policy net '''
     def sample_action(self, state):
@@ -210,20 +219,20 @@ class PolicyNet(nn.Module):
             return states, actions, true_rewards, rewards, discounted_rewards, step
 
     ''' save net and training details in training.json '''
-    def save_training_details(self, output_folder, reward, batch_size, episodes, reward_net_key=None):
-        if not os.path.exists(output_folder):
-            os.makedirs(output_folder)
+    def _save_training_details(self, reward, batch_size, reward_net_key=None):
+        if not os.path.exists(self.folder):
+            os.makedirs(self.folder)
 
-        with open(os.path.join(output_folder, "training.json"), "wt") as file:
+        with open(os.path.join(self.folder, "training.json"), "wt") as file:
             reward_type = "env" if reward is None else "net"
             # (7,7,3) == self.env.observation_space.spaces['image'].shape
             with io.StringIO() as out, redirect_stdout(out):
                 summary(self, (1, 7, 7))
                 net_summary = out.getvalue()
             print(net_summary)
-            name = os.path.split(output_folder)[-1]
+            name = os.path.split(self.folder)[-1]
             j = {"name": name, "type": str(type(self)), "str": str(self).replace("\n", ""), "reward_type": reward_type,
-                       "batch_size": batch_size, "max_episodes": episodes, "summary": net_summary}
+                       "batch_size": batch_size, "max_episodes": self.max_episodes, "summary": net_summary}
 
             if reward_type == "net":
                 j["reward_net_key"] = reward_net_key
@@ -232,8 +241,35 @@ class PolicyNet(nn.Module):
             json.dump(j, file, indent=True)
 
     ''' save net weights (remark: only weights are saved here, not the network structure!) '''
-    def save_checkpoint(self, episode, output_folder):
-        if not os.path.exists(output_folder):
-            os.makedirs(output_folder)
-        checkpoints_file = os.path.join(output_folder, "policy_net-" + str(episode) + ".pth")
+    def save_checkpoint(self):
+        if not os.path.exists(self.folder):
+            os.makedirs(self.folder)
+        checkpoints_file = os.path.join(self.folder, "policy_net-" + str(self.episode) + ".pth")
         torch.save(self.state_dict(), checkpoints_file)
+
+    def _load_last_checkpoint(self):
+        # load the most recent weights from the folder of this policy
+        episode_to_load_weights = self._get_last_saved_policy_episode()
+
+        policy_net = torch.load(os.path.join(self.folder, "net.pth"), map_location=self.current_device())
+        if episode_to_load_weights is not None:
+            policy_net.load_state_dict(
+                torch.load(os.path.join(self.folder, "policy_net-" + str(episode_to_load_weights) + ".pth"),
+                           map_location=self.current_device()))
+
+            self.episode = episode_to_load_weights
+            self.max_episodes = self._get_last_training_max_episodes()
+
+        policy_net = policy_net.to(self.current_device())
+        return policy_net
+
+    def _get_last_saved_policy_episode(self):
+        epochs_saved_weights = [int(state.rsplit("-", 1)[1].split(".", 1)[0]) for state in glob(os.path.join(self.folder, "policy_net-*.pth"))]
+        if len(epochs_saved_weights) > 0:
+            return max(epochs_saved_weights)
+        return None
+
+    def _get_last_training_max_episodes(self):
+        with open(os.path.join(self.folder, "training.json"), "rt") as file:
+            j = json.load(file)
+        return j["max_episodes"]
