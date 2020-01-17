@@ -20,7 +20,7 @@ default_env = "MiniGrid-Empty-6x6-v0"
 default_policy = "policy_nets/conv_policy.py"
 
 
-def train_policy(env_name, policy_net=default_policy, reward_net_path=None, policy_net_key=None, callbacks=[]):
+def train_policy(env_name, policy_net=default_policy, reward_net_path=None, policy_net_key=None, callbacks=[], lazy_load_reward=False):
 
     args_log = {"env_name": env_name, "policy": policy_net, "reward": reward_net_path}
 
@@ -36,29 +36,6 @@ def train_policy(env_name, policy_net=default_policy, reward_net_path=None, poli
         torch.backends.cudnn.deterministic = True
         torch.backends.cudnn.benchmark = False
 
-    # load trained reward_net net if specified, otherwise environment reward will be used
-    if reward_net_path is not None:
-        
-        if reward_net_path.endswith(".pth"):
-            # select specified weights
-            epoch_to_load_weights = reward_net_path.rsplit("-", 1)[1].split(".", 1)[0]
-            reward_net_dir = os.path.dirname(reward_net_path)
-        else:
-            # load the most recent weights from the specified folder
-            episodes_saved_weights = [int(state.rsplit("-", 1)[1].split(".", 1)[0]) for state in glob(os.path.join(reward_net_path, "reward_net-*.pth"))]
-            epoch_to_load_weights = max(episodes_saved_weights)
-            reward_net_dir = reward_net_path
-
-        reward_net_key = os.path.basename(os.path.normpath(reward_net_dir))
-        #reward_net = torch.load(os.path.join(reward_net_dir, "net.pth"))
-        reward_net = pickle.load(open(os.path.join(reward_net_dir, "net.pkl"), "rb"))
-        reward_net.load_state_dict(torch.load(os.path.join(reward_net_dir, "reward_net-" + str(epoch_to_load_weights) + ".pth")))
-        reward_net = reward_net.to(device)
-        reward_net.eval()
-    else:
-        reward_net = None
-        reward_net_key = None
-
     module_path, _ = policy_net.rsplit(".", 1)
     file_radix = os.path.basename(os.path.normpath(module_path))
     net_module = importlib.import_module(".".join(module_path.split(os.sep)))
@@ -72,10 +49,63 @@ def train_policy(env_name, policy_net=default_policy, reward_net_path=None, poli
         json.dump(args_log, file)
 
     policy_net = net_module.get_net(get_input_shape(), get_num_actions(), env, policy_net_key, folder=output_dir).to(device)
-    policy_net.fit(episodes=10000, reward=reward_net, autosave=True, episodes_for_checkpoint=250, reward_net_key=reward_net_key, callbacks=callbacks)
+    policy_net.fit(episodes=10000, reward_loader=lambda: load_reward(reward_net_path, device), autosave=True,
+                   episodes_for_checkpoint=250, reward_net_key=get_reward_key(reward_net_path),
+                   reward_net_games=get_reward_games(reward_net_path), callbacks=callbacks)
 
     # # save trained policy_net net
     # torch.save(policy_net.state_dict(), options.output)
+
+
+def get_reward_key(reward_net_path):
+    if reward_net_path is not None:
+        if reward_net_path.endswith(".pth"):
+            return os.path.dirname(reward_net_path)
+        else:
+            return os.path.basename(os.path.normpath(reward_net_path))
+    else:
+        return None
+
+
+def get_reward_games(reward_net_path):
+    if reward_net_path is None:
+        return None
+    if reward_net_path.endswith(".pth"):
+        reward_net_dir = os.path.dirname(reward_net_path)
+    else:
+        reward_net_dir = reward_net_path
+
+    with open(os.path.join(reward_net_dir, "training.json")) as file:
+        j = json.load(file)
+
+    return j["games"]
+
+
+def load_reward(reward_net_path, device):
+    # load trained reward_net net if specified, otherwise environment reward will be used
+    if reward_net_path is not None:
+
+        if reward_net_path.endswith(".pth"):
+            # select specified weights
+            epoch_to_load_weights = reward_net_path.rsplit("-", 1)[1].split(".", 1)[0]
+            reward_net_dir = os.path.dirname(reward_net_path)
+        else:
+            # load the most recent weights from the specified folder
+            episodes_saved_weights = [int(state.rsplit("-", 1)[1].split(".", 1)[0]) for state in
+                                      glob(os.path.join(reward_net_path, "reward_net-*.pth"))]
+            epoch_to_load_weights = max(episodes_saved_weights)
+            reward_net_dir = reward_net_path
+
+        # reward_net = torch.load(os.path.join(reward_net_dir, "net.pth"))
+        reward_net = pickle.load(open(os.path.join(reward_net_dir, "net.pkl"), "rb"))
+        reward_net.load_state_dict(
+            torch.load(os.path.join(reward_net_dir, "reward_net-" + str(epoch_to_load_weights) + ".pth")))
+        reward_net = reward_net.to(device)
+        reward_net.eval()
+    else:
+        reward_net = None
+
+    return reward_net
 
 
 if __name__ == "__main__":

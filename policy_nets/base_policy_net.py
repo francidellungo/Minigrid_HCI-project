@@ -55,11 +55,16 @@ class PolicyNet(nn.Module):
     def current_device(self):
         return next(self.parameters()).device
 
-    def fit(self, episodes=100, batch_size=16, reward=None, render=False, autosave=False, episodes_for_checkpoint=None, reward_net_key=None, callbacks=[]):
+    def fit(self, episodes=100, batch_size=16, reward_loader=lambda:..., render=False, autosave=False, episodes_for_checkpoint=None, reward_net_key=None, reward_net_games=None,callbacks=[]):
         self.max_episodes = self.episode + episodes
         self.reward_net_key = reward_net_key
-        if reward is not None:
-            self.games = reward.train_games
+        self.games = reward_net_games
+
+        for callback in callbacks:
+            if "on_train_begin" in callback:
+                callback["on_train_begin"](self)
+
+        reward = reward_loader()
         # TODO check why CPU is very slow
 
         ''' print info to open output directory and to open tensorboard '''
@@ -87,9 +92,6 @@ class PolicyNet(nn.Module):
         # clear all gradients
         self.optimizer.zero_grad()
 
-        for callback in callbacks:
-            if "on_train_begin" in callback:
-                callback["on_train_begin"](self)
 
         ''' begin training '''
         for self.episode in range(self.episode, self.max_episodes):

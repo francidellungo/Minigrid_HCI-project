@@ -20,7 +20,7 @@ def split(my_list, split_fraction):
     return my_list[:split_index], my_list[split_index:]
 
 
-def train_reward(env_name, reward_net_file=default_reward, games=None):
+def train_reward(env_name, reward_net_file=default_reward, games=None, callbacks=[]):
 
     games_path = 'games'
     
@@ -67,22 +67,18 @@ def train_reward(env_name, reward_net_file=default_reward, games=None):
     print("Validation trajectories:", list_val_game_info_files if X_val is not None else None)
 
     # X_test = X_val
+
+    # training
     module_path, _ = reward_net_file.rsplit(".", 1)
     file_radix = os.path.basename(os.path.normpath(module_path))
     net_module = importlib.import_module(".".join(module_path.split(os.sep)))
-    reward_net = net_module.get_net(get_input_shape()).to(device)
-
-    print("summary")
-    summary(reward_net, get_input_shape(), device=device)
-
-    # evaluate before training
-    #reward_net.evaluate(X_test, [reward_net.quality])
-
-    # training
     reward_net_dir = module_path.rsplit("/", 1)[0] if "/" in module_path else ""  # TODO linux only
     timestamp = datetime.now().strftime("%Y-%m-%d_%H:%M:%S")
     output_dir = os.path.join(reward_net_dir, env_name, file_radix + "|" + timestamp)
-    reward_net.fit(X_train, max_epochs=20, X_val=X_val, output_folder=output_dir, train_games_info=train_games_info, val_games_info=val_games_info, autosave=True, epochs_for_checkpoint=10, train_games=games)
+    reward_net = net_module.get_net(get_input_shape(), folder=output_dir).to(device)
+    print("summary")
+    summary(reward_net, get_input_shape(), device=device)
+    reward_net.fit(X_train, max_epochs=20, X_val=X_val, train_games_info=train_games_info, val_games_info=val_games_info, autosave=True, epochs_for_checkpoint=10, train_games=games, callbacks=callbacks)
 
     # evaluate after training
     #reward_net.evaluate(X_test, [reward_net.quality])
@@ -93,7 +89,7 @@ def train_reward(env_name, reward_net_file=default_reward, games=None):
 
     # # save trained reward net
     # torch.save(reward_net.state_dict(), "reward_net.pth")
-    return output_dir
+    return reward_net
 
 
 if __name__ == "__main__":

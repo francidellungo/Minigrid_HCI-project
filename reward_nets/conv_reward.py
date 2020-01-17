@@ -9,8 +9,8 @@ from reward_nets.base_reward_net import RewardNet
 
 
 class ConvRewardNet(RewardNet):
-    def __init__(self, input_shape, lr=1e-3):
-        super(RewardNet, self).__init__()
+    def __init__(self, input_shape, lr=1e-3, folder=None):
+        super(ConvRewardNet, self).__init__(input_shape, lr, folder)
         self.input_shape = input_shape
 
         # simple net with: 2D convolutional layer -> activation layer -> fully connected layer

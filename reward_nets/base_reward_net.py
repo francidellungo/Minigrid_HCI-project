@@ -76,28 +76,30 @@ class RewardNet(nn.Module):
 
 
     @abstractmethod
-    def __init__(self, input_shape, lr=1e-4):
+    def __init__(self, input_shape, lr=1e-4, folder=None):  # TODO clean unused arguments
         super(RewardNet, self).__init__()
         self.train_games = None
+        self.folder = folder
+        self.key = os.path.basename(os.path.normpath(folder))
 
     @abstractmethod
     def forward(self, x):
         pass
 
-    def fit(self, X_train, max_epochs=1000, batch_size=16, num_subtrajectories=7, subtrajectory_length=3, X_val=None, output_folder="", use_also_complete_trajectories=True, train_games_info=None, val_games_info=None, autosave=False, epochs_for_checkpoint=None, train_games=None):
+    def fit(self, X_train, max_epochs=1000, batch_size=16, num_subtrajectories=7, subtrajectory_length=3, X_val=None, use_also_complete_trajectories=True, train_games_info=None, val_games_info=None, autosave=False, epochs_for_checkpoint=None, train_games=None, callbacks=[]):
 
         self.train_games = train_games
 
         ''' print info to open output directory and to open tensorboard '''
-        print('output directory:\n"' + os.path.abspath(output_folder) + '"')
-        tb_path = os.path.abspath(os.path.join(output_folder, "tensorboard"))
+        print('output directory:\n"' + os.path.abspath(self.folder) + '"')
+        tb_path = os.path.abspath(os.path.join(self.folder, "tensorboard"))
         print('to visualize training progress:\n`tensorboard --logdir="{}"`'.format(tb_path))
         tensorboard = SummaryWriter(tb_path)
 
         ''' save info about this training in training.json, and also save the structure of the network '''
-        self.save_training_details(output_folder, batch_size, num_subtrajectories, subtrajectory_length, use_also_complete_trajectories, train_games)
-        #torch.save(self, os.path.join(output_folder, "net.pth"))
-        pickle.dump(self, open(os.path.join(output_folder, "net.pkl"), "wb"))
+        self.save_training_details(batch_size, num_subtrajectories, subtrajectory_length, use_also_complete_trajectories, train_games)
+        #torch.save(self, os.path.join(self.folder, "net.pth"))
+        pickle.dump(self, open(os.path.join(self.folder, "net.pkl"), "wb"))
 
         # TODO ha senso che subtrajectory_length invece di una costante sia un range entro il quale scegliere a random la lunghezza della sottotraiettoria?
         # TODO bisogna capire quale è un buon modo per scegliere tutti questi iperparametri delle sottotraiettorie
@@ -108,6 +110,10 @@ class RewardNet(nn.Module):
         #     t_lens.append(len(trajectory))
         #
         # X_train = torch.cat([trajectory for trajectory in X_train])
+        
+        for callback in callbacks:
+            if "on_train_begin" in callback:
+                callback["on_train_begin"](self)
 
         ''' begin training '''
         for epoch in range(max_epochs):
@@ -218,15 +224,21 @@ class RewardNet(nn.Module):
             print(epoch_summary)
 
             # check if I have to save the net weights in this episode
-            if autosave and epochs_for_checkpoint is not None and epoch % epochs_for_checkpoint == epochs_for_checkpoint - 1:
-                # save net weights
-                self.save_checkpoint(epoch, output_folder)
+            if autosave:
+                if (epochs_for_checkpoint is not None and epoch % epochs_for_checkpoint == epochs_for_checkpoint - 1) or epoch == max_epochs-1:
+                    # save net weights
+                    self.save_checkpoint(epoch)
+                
+            for callback in callbacks:
+                if "on_epoch_end" in callback:
+                    callback["on_epoch_end"](self)
 
         ''' training ended '''
         tensorboard.close()
-        # save net weights only if they haven't been saved in the last epoch
-        if autosave and (epochs_for_checkpoint is None or (max_epochs - 1) % epochs_for_checkpoint != epochs_for_checkpoint - 1):
-            self.save_checkpoint(max_epochs - 1, output_folder)
+
+        for callback in callbacks:
+            if "on_train_end" in callback:
+                callback["on_train_end"](self)
 
     ''' calculate scores for trajectories '''
     def calculate_trajectories_scores(self, X):
@@ -284,11 +296,11 @@ class RewardNet(nn.Module):
         return np.corrcoef(true_trajectories_scores, normalized_trajectories_scores)[0][1]
 
     ''' save net and training details in training.json '''
-    def save_training_details(self, output_folder, batch_size, num_subtrajectories, subtrajectory_length, use_also_complete_trajectories, train_games):
-        if not os.path.exists(output_folder):
-            os.makedirs(output_folder)
+    def save_training_details(self, batch_size, num_subtrajectories, subtrajectory_length, use_also_complete_trajectories, train_games):
+        if not os.path.exists(self.folder):
+            os.makedirs(self.folder)
 
-        with open(os.path.join(output_folder, "training.json"), "wt") as file:
+        with open(os.path.join(self.folder, "training.json"), "wt") as file:
             # (7,7,3) == self.env.observation_space.spaces['image'].shape
             with io.StringIO() as out, redirect_stdout(out):
                 summary(self, (1, 7, 7)) # TODO sistemare questo shape
@@ -303,8 +315,8 @@ class RewardNet(nn.Module):
             json.dump(j, file, indent=True)
 
     ''' save net weights (remark: only weights are saved here, not the network structure!) '''
-    def save_checkpoint(self, epoch, output_folder):
-        if not os.path.exists(output_folder):
-            os.makedirs(output_folder)
-        checkpoint_file = os.path.join(output_folder, "reward_net-" + str(epoch) + ".pth")
+    def save_checkpoint(self, epoch):
+        if not os.path.exists(self.folder):
+            os.makedirs(self.folder)
+        checkpoint_file = os.path.join(self.folder, "reward_net-" + str(epoch) + ".pth")
         torch.save(self.state_dict(), checkpoint_file)
