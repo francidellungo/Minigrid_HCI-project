@@ -34,7 +34,7 @@ class GamesController:
         self.games_model = GamesModel(env, agents_model)
 
         # view (gui)
-        self.view = GamesView(env, self.games_model, agents_window)
+        self.view = GamesView(env, self.games_model, agents_window, self.agents_model)
         self.view.show()
 
         # gui for new game
@@ -47,8 +47,8 @@ class GamesController:
         self.games_model.game_removed.connect(self.view.remove_game_from_gui)
         self.games_model.game_moved.connect(self.view.move_game_gui)
 
-        self.games_model.moved_up.connect(self.view.move_game_up_gui)
-        self.games_model.moved_down.connect(self.view.move_game_down_gui)
+        self.games_model.moved_up.connect(self.view.move_game_down_gui)
+        self.games_model.moved_down.connect(self.view.move_game_up_gui)
 
         # connect buttons events to slots (without view)
         # self.ui.new_game_pb.clicked.connect(lambda: self.games_model.new_game(env_used, 'game ' + str(self.games_model.n_games)))
@@ -57,7 +57,7 @@ class GamesController:
         self.view.ui.new_game_pb.clicked.connect(lambda: self.create_new_game(env))
         # self.view.ui.remove_game_pb.clicked.connect(lambda: self.model.remove_game('games', 0))
         # self.view.ui.remove_game_pb.clicked.connect(lambda: self.games_model.remove_game('games', 0))
-        self.view.ui.train_pb.clicked.connect(self.train_agent_slot)
+        # self.view.ui.train_pb.clicked.connect(self.train_agent_slot)
 
 
     def create_new_game(self, env):
@@ -67,7 +67,6 @@ class GamesController:
         :param name: name for the new game (really needed?)
         :return:
         """
-        # TODO play minigrid to be fixed
         # game_dir = open_newGame_dialog(env)
         self.new_game_dialog = NewGameView(env, self.games_model)
         self.new_game_dialog.exec_()
@@ -112,12 +111,12 @@ class GamesController:
     #     self.view.ui.verticalLayout_2.addLayout(horiz)
     #     pass
 
-    def train_agent_slot(self):
-        if self.agents_model is None:
-            print("Error: _agents_model is None")
-            return
-        self.agents_model.create_agent(self.env, self.games_model.ranked_games)
-        self.view.close()
+    # def train_agent_slot(self):
+    #     if self.agents_model is None:
+    #         print("Error: _agents_model is None")
+    #         return
+    #     self.agents_model.create_agent(self.env, self.games_model.ranked_games)
+    #     self.view.close()
 
 
 class NewGameView(QDialog):
@@ -167,11 +166,7 @@ class NewGameView(QDialog):
         self.games_model.new_game(self.env_name, self.game_folder, self.game_folder)
         self.close()
         return self.game_folder
-    #
-    # def rejected(self) -> None:
-    #     print('reject event _ ')
-    #     self.close()
-    #     return
+
 
 
     # def setKeyDownCb(self, callback):
@@ -318,33 +313,33 @@ class NewGameView(QDialog):
         #     return obs, None, True, None
         return obs, reward, done, info
 
-    def play_new_game(self):
-        # game_label = self.ui.game_label
-        # print('env reset', self.reset_env(self.env_name))
-
-        self.env.reset()
-
-        # pixmap = self.env.render('pixmap')
-        # print('pixmap', pixmap)
-        # # print(type(self.env.render('human')), type(self.env.render('pixmap')))
-        # self.ui.game_label.setPixmap(pixmap)
-        self.show()
-        # print('self.ui.game_label.setPixmap(pixmap): ', pixmap)
-        # self.setKeyDownCb(self.keyDownCb_f)
-
-        self.done = False
-        while not self.done:
-            pixmap = self.env.render('pixmap')
-            self.ui.game_label.setPixmap(pixmap)
-
-            if self.done is True:
-                pixmap = self.env.render('pixmap')
-                self.ui.game_label.setPixmap(pixmap)
-                self.env.close()
-                self.ui.game_buttonBox.button(QtWidgets.QDialogButtonBox.Save).setEnabled(True)
-                break
-
-        # return self.game_folder
+    # def play_new_game(self):
+    #     # game_label = self.ui.game_label
+    #     # print('env reset', self.reset_env(self.env_name))
+    #
+    #     self.env.reset()
+    #
+    #     # pixmap = self.env.render('pixmap')
+    #     # print('pixmap', pixmap)
+    #     # # print(type(self.env.render('human')), type(self.env.render('pixmap')))
+    #     # self.ui.game_label.setPixmap(pixmap)
+    #     self.show()
+    #     # print('self.ui.game_label.setPixmap(pixmap): ', pixmap)
+    #     # self.setKeyDownCb(self.keyDownCb_f)
+    #
+    #     self.done = False
+    #     while not self.done:
+    #         pixmap = self.env.render('pixmap')
+    #         self.ui.game_label.setPixmap(pixmap)
+    #
+    #         if self.done is True:
+    #             pixmap = self.env.render('pixmap')
+    #             self.ui.game_label.setPixmap(pixmap)
+    #             self.env.close()
+    #             self.ui.game_buttonBox.button(QtWidgets.QDialogButtonBox.Save).setEnabled(True)
+    #             break
+    #
+    #     # return self.game_folder
 
     def state_filter(self, state):
         return state['image'][:, :, 0]

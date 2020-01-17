@@ -77,7 +77,7 @@ class GamesModel(QObject):
         dest_list = self.ranked_games if current_list == 'games' else self.games_list
         # game_idx = source_list.index(game_name)
         source_list.remove(game_name)
-        dest_list.append(game_name)
+        dest_list.insert(0, game_name)
         dest_list_name = 'rank' if current_list == 'games' else 'games'
 
         self.game_moved.emit(dest_list_name, folder_name)

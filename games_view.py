@@ -40,17 +40,19 @@ folder_name = '2020-01-05_15:04:54'
 
 class GamesView(QMainWindow):
 
-    def __init__(self, env, model, agents_window):
+    def __init__(self, env, games_model, agents_window, agents_model):
         super().__init__()
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
-        self.model = model
+        self.games_model = games_model
+        self.agents_model = agents_model
         self.env = env
         self.counts = []
 
         self.initUI(env)
         self.setWindowTitle(env)
         self.agents_window = agents_window
+        self.ui.train_pb.clicked.connect(self.train_agent_slot)
 
     # def add_row(self, name):
     #     horiz = QHBoxLayout()
@@ -139,7 +141,6 @@ class GamesView(QMainWindow):
             horiz.addWidget(move_up_btn)
             horiz.addWidget(move_down_btn)
 
-
         # add row to vertical layout
         if list_ == 'games':
             self.ui.games_verticalLayout.addWidget(row)
@@ -156,15 +157,15 @@ class GamesView(QMainWindow):
         delete_pb.clicked.connect(lambda: self.confirm_delete_dialog(row))
 
         # move game between lists push button
-        move_btn.clicked.connect(lambda: self.model.move_game(('games' if row.parent().objectName() == 'games_verticalW' else 'rank'), row.objectName()))
+        move_btn.clicked.connect(lambda: self.games_model.move_game(('games' if row.parent().objectName() == 'games_verticalW' else 'rank'), row.objectName()))
 
         if list_ == 'rank':
             # connect move up and down buttons (in ranking list)
-            move_up_btn.clicked.connect(lambda: self.model.move_up(folder_name))
+            move_up_btn.clicked.connect(lambda: self.games_model.move_down(folder_name))
             move_up_btn.setEnabled(True)
             # move_down_btn.clicked.connect(self.check_enable_btn)
 
-            move_down_btn.clicked.connect(lambda: self.model.move_down(folder_name))
+            move_down_btn.clicked.connect(lambda: self.games_model.move_up(folder_name))
             # move_down_btn.clicked.connect(self.check_enable_btn)
             move_down_btn.setEnabled(True)
         self.check_enable_btn()
@@ -194,8 +195,8 @@ class GamesView(QMainWindow):
         button_reply = QMessageBox.question(self, 'Confirm deletion', "Are you sure you want to delete " + str(row.objectName() + " ?"),
                                            QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
         if button_reply == QMessageBox.Yes:
-            self.model.remove_game(row.objectName(),
-                                   ('games' if row.parent() == self.ui.games_verticalW else 'rank'))
+            self.games_model.remove_game(row.objectName(),
+                                         ('games' if row.parent() == self.ui.games_verticalW else 'rank'))
             # print('Yes clicked.')
         # else:
             # print('No clicked.')
@@ -215,8 +216,9 @@ class GamesView(QMainWindow):
         # self.new_game_Dialog = NewGame()
         # self.ui.new_game_pb.clicked.connect(lambda: self.add_row('row1'))
 
-        for traj in self.model.games_list:
+        for traj in reversed(self.games_model.games_list):
             self.add_row(env, traj)
+
 
     def remove_game_from_gui(self, folder_name):
         """
@@ -302,6 +304,15 @@ class GamesView(QMainWindow):
     #         games_items = (self.ui.ranking_verticalLayout.itemAt(i) for i in range(self.ui.ranking_verticalLayout.count()))
     #     return games_items
 
+    def train_agent_slot(self):
+        if self.agents_model is None:
+            print("Error: _agents_model is None")
+            return
+        self.agents_model.create_agent(self.env, self.games_model.ranked_games)
+        self.close()
+        print(self.games_model.ranked_games)
+        print(self.ui.ranking_verticalLayout)
+
     def show_traj_imgs(self, games_dir, img_label, timer):
         imgs_nums = [elem.split('game')[1].split('.')[0] for elem in os.listdir(games_dir) if elem.endswith(".png")]
         imgs_nums.sort(key=int)
@@ -312,7 +323,6 @@ class GamesView(QMainWindow):
         # show images in loop with only one timer.
         timer.timeout.connect(lambda: self.on_timeout(os.path.join(games_dir, next(imgs_cycle)), img_label))
         timer.start(250)
-
 
     def stop_show_traj(self, games_dir, img_label, timer):
         timer.stop()
