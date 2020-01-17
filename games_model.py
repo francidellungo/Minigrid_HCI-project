@@ -82,9 +82,6 @@ class GamesModel(QObject):
 
         self.game_moved.emit(dest_list_name, folder_name)
 
-
-        # TODO emit signal list changed
-
     def remove_game(self, folder_name, list_):
         """
         remove a game from a list
