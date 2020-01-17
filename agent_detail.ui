@@ -143,6 +143,23 @@
     </item>
     <item>
      <layout class="QVBoxLayout" name="info_verticalLayout">
+      <property name="topMargin">
+       <number>0</number>
+      </property>
+      <item>
+       <widget class="QLabel" name="list_title_label">
+        <property name="font">
+         <font>
+          <weight>75</weight>
+          <italic>true</italic>
+          <bold>true</bold>
+         </font>
+        </property>
+        <property name="text">
+         <string>Games used for training</string>
+        </property>
+       </widget>
+      </item>
       <item>
        <widget class="QScrollArea" name="info_scrollArea">
         <property name="widgetResizable">
@@ -154,7 +171,7 @@
            <x>0</x>
            <y>0</y>
            <width>341</width>
-           <height>324</height>
+           <height>302</height>
           </rect>
          </property>
          <layout class="QVBoxLayout" name="info_verticalLayout_2"/>

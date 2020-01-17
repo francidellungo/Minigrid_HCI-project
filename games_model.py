@@ -59,7 +59,7 @@ class GamesModel(QObject):
         :param game_idx: index of the element in the current list
         :return:
         """
-        print('current_list, game_name: ', current_list, game_name)
+        # print('current_list, game_name: ', current_list, game_name)
         folder_name = game_name
         source_list = self.games_list if current_list == 'games' else self.ranked_games
         dest_list = self.ranked_games if current_list == 'games' else self.games_list

@@ -104,9 +104,6 @@ class GamesController:
     #     self.view.ui.verticalLayout_2.addLayout(horiz)
     #     pass
 
-    def print_(self):
-        print('funziona')
-
     def train_agent_slot(self):
         if self.agents_model is None:
             print("Error: agents_model is None")
