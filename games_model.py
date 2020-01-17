@@ -1,3 +1,5 @@
+import shutil
+
 from PyQt5.QtCore import QObject, pyqtSignal
 import os
 
@@ -22,6 +24,7 @@ class GamesModel(QObject):
         self.ranked_games = []
         # self.all_games = {}  # TODO to complete folder name, name ecc
         self.n_games = 0
+        self.env = env
         self.load_existing_games(env)
 
     def load_existing_games(self, env):
@@ -33,12 +36,13 @@ class GamesModel(QObject):
         :param env: current environment used
         :return:
         """
-        for idx, game in enumerate(os.listdir(os.path.join(games_path, env))):
-            self.games_list.append(game)
-            # self.all_games[str(game)] = {'name': game}
+        if os.path.exists(os.path.join(games_path, env)):
+            for idx, game in enumerate(os.listdir(os.path.join(games_path, env))):
+                self.games_list.append(game)
+                # self.all_games[str(game)] = {'name': game}
 
-            # self.games[str(game)] = {'name': 'game' + str(idx), 'list': 'games'}
-            self.n_games += 1
+                # self.games[str(game)] = {'name': 'game' + str(idx), 'list': 'games'}
+                self.n_games += 1
 
     def new_game(self, env, folder_name, game_name):
         """
@@ -80,9 +84,6 @@ class GamesModel(QObject):
         :param list_: 'games' or 'rank'
         :return:
         """
-        # TODO are you sure you want to delete?
-
-        self.game_removed.emit(folder_name)
 
         if list_ == 'games':
             # print(len(self.games_list))
@@ -90,6 +91,11 @@ class GamesModel(QObject):
             # del self.games[str(folder_name)]
         else:
             self.ranked_games.remove(folder_name)
+
+        removing_dir = os.path.join(games_path, self.env, folder_name)
+        shutil.rmtree(removing_dir, ignore_errors=True)
+
+        self.game_removed.emit(folder_name)
 
     def move_up(self, game_name):
         # move element up in the rank list

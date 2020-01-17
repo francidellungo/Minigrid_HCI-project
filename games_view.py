@@ -212,10 +212,11 @@ class GamesView(QMainWindow):
         # self.new_game_Dialog = NewGame()
         # self.ui.new_game_pb.clicked.connect(lambda: self.add_row('row1'))
 
-        for traj_idx, traj in enumerate(os.listdir(os.path.join(games_path, env))):
-            # print(traj)
-            # print('add row', traj_idx)
-            self.add_row(env, traj)
+        if os.path.exists(os.path.join(games_path, env)):
+            for traj_idx, traj in enumerate(os.listdir(os.path.join(games_path, env))):
+                # print(traj)
+                # print('add row', traj_idx)
+                self.add_row(env, traj)
 
     def remove_game_from_gui(self, folder_name):
         """
