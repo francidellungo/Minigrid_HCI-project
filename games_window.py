@@ -73,9 +73,10 @@ class GamesController:
 
         if new_game_dialog.accept:
             print('new game saved:', new_game_dialog.game_folder)
-            self.model.new_game(env, new_game_dialog.game_folder, 'game ' + str(self.model.n_games))
+            self.games_model.new_game(env, new_game_dialog.game_folder, 'game ' + str(self.games_model.n_games))
         else:
             print('not saved')
+
 
     # def add_row(self, env, name, folder_name):
     #     """

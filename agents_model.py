@@ -93,7 +93,7 @@ class AgentsModel(QObject):
         return self._agents.keys()
 
     def create_agent(self, environment, games):
-        TrainingManager.train_new_agent(environment, games, self, lambda key: self.add_agent(environment, key) or self.update_agent(environment, key))
+        TrainingManager.train_new_agent(environment, games, self, lambda agent: self.add_agent(environment, agent.key, agent) or self.update_agent(environment, agent.key))
 
     def add_agent(self, environment: str, agent_key: str, agent:PolicyNet=None) -> bool:
         if environment not in self._agents or agent_key in self._agents[environment]:

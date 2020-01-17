@@ -89,7 +89,7 @@ class PolicyNet(nn.Module):
 
         for callback in callbacks:
             if "on_train_begin" in callback:
-                callback["on_train_begin"](self.key)
+                callback["on_train_begin"](self)
 
         ''' begin training '''
         for self.episode in range(self.episode, self.max_episodes):
@@ -166,14 +166,14 @@ class PolicyNet(nn.Module):
 
             for callback in callbacks:
                 if "on_episode_end" in callback:
-                    callback["on_episode_end"](self.key)
+                    callback["on_episode_end"](self)
 
         ''' training ended '''
         tensorboard.close()
 
         for callback in callbacks:
             if "on_train_end" in callback:
-                callback["on_train_end"](self.key)
+                callback["on_train_end"](self)
 
     ''' transform environment observation into neural network input '''
     def state_filter(self, state):
@@ -286,6 +286,3 @@ class PolicyNet(nn.Module):
         with open(os.path.join(self.folder, "training.json"), "rt") as file:
             j = json.load(file)
         return j["max_episodes"]
-
-    def get_current_episode(self):
-        return self.episode

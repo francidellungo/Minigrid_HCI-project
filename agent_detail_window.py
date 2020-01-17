@@ -47,7 +47,7 @@ class AgentDetailWindow(QMainWindow):
 
     def refresh_training_status(self):
         max_episodes = self.agent.max_episodes
-        current_episode = self.agent.get_current_episode()
+        current_episode = self.agent.episode
 
         if current_episode + 1 == max_episodes: # +1 is used because episode count starts from 0
             self.ui.labelStatus.setText("Status: training completed")
