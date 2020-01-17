@@ -167,8 +167,6 @@ class NewGameView(QDialog):
         self.close()
         return self.game_folder
 
-
-
     # def setKeyDownCb(self, callback):
     #     self.keyDownCb = callback
 
@@ -399,6 +397,13 @@ class NewGameView(QDialog):
                 action = self.env.actions.forward
                 # self.sig_key_home.emit()
                 # QKeyEvent.accept()
+            elif QKeyEvent.key() == Qt.Key_P:
+                action = self.env.actions.pickup
+            elif QKeyEvent.key() == Qt.Key_O:
+                action = self.env.actions.drop
+            elif QKeyEvent.key() == Qt.Key_I:
+                action = self.env.actions.toggle
+
             else:
                 print("unknown key %s" % QKeyEvent.key())
                 return
