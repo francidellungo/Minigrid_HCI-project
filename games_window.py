@@ -22,7 +22,7 @@ folder_name = '2019-12-11_13:40:14'
 
 class GamesController:
 
-    def __init__(self, env, agents_model=None):
+    def __init__(self, env, agents_window, agents_model=None):
 
         # env
         self.env = env
@@ -31,10 +31,10 @@ class GamesController:
         self.agents_model = agents_model
 
         # games_model
-        self.games_model = GamesModel(env)
+        self.games_model = GamesModel(env, agents_model)
 
         # view (gui)
-        self.view = GamesView(env, self.games_model)
+        self.view = GamesView(env, self.games_model, agents_window)
         self.view.show()
 
         # gui for new game

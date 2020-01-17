@@ -59,15 +59,15 @@ class AgentsWindow(QMainWindow):
         self.ui.environments_tabs.setCornerWidget(self.btn_add_env, Qt.TopRightCorner)
 
     def update_gui_from_model(self): # TODO rivedere
+        agents_envs = self._agents_model.get_environments()
         for env in get_all_environments():
-            if env not in self._agents_model.get_environments() and len(GamesModel(env).games_list) == 0:
+            if env not in agents_envs and len(GamesModel(env, self._agents_model).games_list) == 0:
                 continue
 
             self.add_environment_to_gui(env)
 
-            for agent in self._agents_model.get_agents(env):
-                self.add_agent_to_gui(env, agent) # TODO cambiare con riga sotto
-                #self.add_agent_to_gui(env, self._agents_model.agents[env][agent]["name"])
+            for agent_key in self._agents_model.get_agents(env):
+                self.add_agent_to_gui(env, agent_key)
 
     def ask_for_new_environment(self):
         items = get_all_environments()
@@ -153,13 +153,13 @@ class AgentsWindow(QMainWindow):
         # link slot to agent_updated signal
         self._agents_model.agent_updated.connect(self.update_agent_on_gui)
 
-    def update_agent_on_gui(self, environment, agent_name): # TODO rivedere
-        agent = self._agents_model.get_agent(environment, agent_name)
+    def update_agent_on_gui(self, environment, agent_key): # TODO rivedere
+        agent = self._agents_model.get_agent(environment, agent_key)
         max_episodes = agent.max_episodes
         current_episode = agent.episode
 
         label_loading = self.ui.environments_tabs.findChild(QWidget, environment + self.sep + "env_tab_widget").\
-            findChild(QLabel, environment + self.sep + agent_name + self.sep + "label_loading")
+            findChild(QLabel, environment + self.sep + agent_key + self.sep + "label_loading")
 
         if current_episode is not None and current_episode + 1 == max_episodes: # +1 is used because episode count starts from 0
             label_loading.setMovie(None)
@@ -195,7 +195,8 @@ class AgentsWindow(QMainWindow):
 
     def create_agent_click_slot(self):
         environment = self.ui.environments_tabs.currentWidget().objectName().split(self.sep)[0]
-        self.games = GamesController(environment, self._agents_model)
+        GamesController(environment, self, self._agents_model)
+        self.ui.btn_create.setEnabled(False)
 
 
     # TODO stop threads in TrainingManager on exit?

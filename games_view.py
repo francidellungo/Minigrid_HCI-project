@@ -2,6 +2,8 @@ import os
 import sys
 from itertools import cycle
 
+from PyQt5 import QtGui
+
 from Ui_scrollbar_v2 import Ui_MainWindow
 
 from PyQt5.QtGui import QPixmap, QColor, QCursor, QIcon
@@ -38,7 +40,7 @@ folder_name = '2020-01-05_15:04:54'
 
 class GamesView(QMainWindow):
 
-    def __init__(self, env, model):
+    def __init__(self, env, model, agents_window):
         super().__init__()
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
@@ -48,6 +50,7 @@ class GamesView(QMainWindow):
 
         self.initUI(env)
         self.setWindowTitle(env)
+        self.agents_window = agents_window
 
     # def add_row(self, name):
     #     horiz = QHBoxLayout()
@@ -212,11 +215,8 @@ class GamesView(QMainWindow):
         # self.new_game_Dialog = NewGame()
         # self.ui.new_game_pb.clicked.connect(lambda: self.add_row('row1'))
 
-        if os.path.exists(os.path.join(games_path, env)):
-            for traj_idx, traj in enumerate(os.listdir(os.path.join(games_path, env))):
-                # print(traj)
-                # print('add row', traj_idx)
-                self.add_row(env, traj)
+        for traj in self.model.games_list:
+            self.add_row(env, traj)
 
     def remove_game_from_gui(self, folder_name):
         """
@@ -331,6 +331,9 @@ class GamesView(QMainWindow):
             pass
         #     self.timer.stop()
 
+    def closeEvent(self, a0: QtGui.QCloseEvent) -> None:
+        super().closeEvent(a0)
+        self.agents_window.ui.btn_create.setEnabled(True)
 
 # if __name__ == '__main__':
 #     app = QApplication(sys.argv)

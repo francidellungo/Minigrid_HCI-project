@@ -92,7 +92,7 @@ class AgentsModel(QObject):
     def get_environments(self):
         return self._agents.keys()
 
-    def create_agent(self, environment, games):
+    def create_agent(self, environment: str, games: list):
         TrainingManager.train_new_agent(environment, games, self, lambda agent: self.add_agent(environment, agent.key, agent) or self.update_agent(environment, agent.key))
 
     def add_agent(self, environment: str, agent_key: str, agent:PolicyNet=None) -> bool:
@@ -117,11 +117,31 @@ class AgentsModel(QObject):
             return False
         agent = self._agents[environment].pop(agent_key)
         shutil.rmtree(agent.folder, ignore_errors=True)
+        self._delete_agent_games(environment, agent)
         self.agent_deleted.emit(environment, agent_key)
         return True
 
-    def get_agent(self, environment, agent_name):
-        return self._agents[environment][agent_name]
+    def _delete_agent_games(self, environment, agent):
+        games = agent.games
+        for game in games:
+            with open(os.path.join("games", environment, game, "game.json"), 'rt') as file:
+                j = json.load(file)
+            if not j["to_delete"]:
+                continue
+            if self.game_used_by_some_agent(environment, game):
+                continue
+            removing_dir = os.path.join("games", environment, game)
+            shutil.rmtree(removing_dir, ignore_errors=True)
+
+    def game_used_by_some_agent(self, environment, game):
+        for agent_key in self._agents[environment]:
+            agent = self._agents[environment][agent_key]
+            if game in agent.games:
+                return True
+        return False
+
+    def get_agent(self, environment: str, agent_key: str):
+        return self._agents[environment][agent_key]
 
     def read_agent_games(self, environment, reward_key):
         trained_reward_info = os.path.join(self.rewards_dir, "conv_reward", environment, reward_key, "training.json")  # TODO cambiare!!!!!! -> rimuovere "conv_reward"
@@ -133,7 +153,7 @@ class AgentsModel(QObject):
             print("File not found: " + trained_reward_info)
             return None
 
-    def load_agent(self, environment, agent_key):
+    def load_agent(self, environment: str, agent_key: str):
         agent_dir = os.path.join(self.agents_dir, environment, agent_key)
 
         # module_path, _ = policy_net_file.rsplit(".", 1)
@@ -142,7 +162,7 @@ class AgentsModel(QObject):
         agent = pickle.load(open(os.path.join(agent_dir, "net.pkl"), "rb")).to(self.device)
         return agent
 
-    def load_agent_value(self, environment, agent_key):
+    def load_agent_value(self, environment: str, agent_key: str):
         trained_agent_dir = os.path.join(self.agents_dir, environment, agent_key)
         trained_agent_info = os.path.join(trained_agent_dir, "training.json")
         try:
@@ -155,7 +175,7 @@ class AgentsModel(QObject):
             print("File not found: " + trained_agent_info)
             return None
 
-    def get_agents(self, environment):
+    def get_agents(self, environment: str):
         if environment in self._agents:
             return self._agents[environment].keys()
         return []

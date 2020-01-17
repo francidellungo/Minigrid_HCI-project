@@ -1,3 +1,4 @@
+import json
 import shutil
 
 from PyQt5.QtCore import QObject, pyqtSignal
@@ -17,7 +18,7 @@ class GamesModel(QObject):
     moved_up = pyqtSignal(str)
     moved_down = pyqtSignal(str)
 
-    def __init__(self, env):
+    def __init__(self, env, agents_model):
         super().__init__()
         # self.games = {}
         self.games_list = []
@@ -26,6 +27,7 @@ class GamesModel(QObject):
         self.n_games = 0
         self.env = env
         self.load_existing_games(env)
+        self.agents_model = agents_model
 
     def load_existing_games(self, env):
         """
@@ -38,6 +40,12 @@ class GamesModel(QObject):
         """
         if os.path.exists(os.path.join(games_path, env)):
             for idx, game in enumerate(os.listdir(os.path.join(games_path, env))):
+
+                with open(os.path.join(games_path, env, game, "game.json"), "rt") as file:
+                    j = json.load(file)
+                if j["to_delete"]:
+                    continue
+
                 self.games_list.append(game)
                 # self.all_games[str(game)] = {'name': game}
 
@@ -93,7 +101,16 @@ class GamesModel(QObject):
             self.ranked_games.remove(folder_name)
 
         removing_dir = os.path.join(games_path, self.env, folder_name)
-        shutil.rmtree(removing_dir, ignore_errors=True)
+        if self.agents_model.game_used_by_some_agent(self.env, folder_name):
+            # write "to_delete": true in json
+            with open(os.path.join(games_path, self.env, folder_name, "game.json"), "rt") as file:
+                j = json.load(file)
+            j["to_delete"] = True
+            with open(os.path.join(games_path, self.env, folder_name, "game.json"), "wt") as file:
+                json.dump(j, file)
+        else:
+            # delete game directory
+            shutil.rmtree(removing_dir, ignore_errors=True)
 
         self.game_removed.emit(folder_name)
 
