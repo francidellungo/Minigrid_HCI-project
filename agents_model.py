@@ -116,7 +116,7 @@ class AgentsModel(QObject):
         if environment not in self._agents or agent_key not in self._agents[environment]:
             return False
         agent = self._agents[environment].pop(agent_key)
-        shutil.rmtree(agent["path"], ignore_errors=True)
+        shutil.rmtree(agent.folder, ignore_errors=True)
         self.agent_deleted.emit(environment, agent_key)
         return True
 
@@ -156,4 +156,6 @@ class AgentsModel(QObject):
             return None
 
     def get_agents(self, environment):
-        return self._agents[environment].keys()
+        if environment in self._agents:
+            return self._agents[environment].keys()
+        return []

@@ -12,6 +12,7 @@ from PyQt5.QtWidgets import *
 from agent_detail_window import AgentDetailWindow
 from agents_model import AgentsModel
 from agents_ui import Ui_Agents
+from games_model import GamesModel
 from games_window import GamesController
 from utils import get_all_environments
 
@@ -29,17 +30,17 @@ class AgentsWindow(QMainWindow):
         self.agent_details_window = None
 
         # Instantiate a model.
-        self._model = AgentsModel()
+        self._agents_model = AgentsModel()
 
         # Set up the user interface from Designer.
         self.ui = Ui_Agents()
         self.ui.setupUi(self)
 
         # Connect model signals to slots
-        self._model.environment_added.connect(self.add_environment_to_gui)
-        self._model.environment_deleted.connect(self.delete_environment_from_gui)
-        self._model.agent_added.connect(self.add_agent_to_gui)
-        self._model.agent_deleted.connect(self.delete_agent_from_gui)
+        self._agents_model.environment_added.connect(self.add_environment_to_gui)
+        self._agents_model.environment_deleted.connect(self.delete_environment_from_gui)
+        self._agents_model.agent_added.connect(self.add_agent_to_gui)
+        self._agents_model.agent_deleted.connect(self.delete_agent_from_gui)
 
         self.ui.environments_tabs.removeTab(0) # TODO remove
 
@@ -58,12 +59,15 @@ class AgentsWindow(QMainWindow):
         self.ui.environments_tabs.setCornerWidget(self.btn_add_env, Qt.TopRightCorner)
 
     def update_gui_from_model(self): # TODO rivedere
-        for env in self._model.get_environments():
+        for env in get_all_environments():
+            if env not in self._agents_model.get_environments() and len(GamesModel(env).games_list) == 0:
+                continue
+
             self.add_environment_to_gui(env)
 
-            for agent in self._model.get_agents(env):
+            for agent in self._agents_model.get_agents(env):
                 self.add_agent_to_gui(env, agent) # TODO cambiare con riga sotto
-                #self.add_agent_to_gui(env, self._model.agents[env][agent]["name"])
+                #self.add_agent_to_gui(env, self._agents_model.agents[env][agent]["name"])
 
     def ask_for_new_environment(self):
         items = get_all_environments()
@@ -147,10 +151,10 @@ class AgentsWindow(QMainWindow):
         self.update_agent_on_gui(environment, agent)
 
         # link slot to agent_updated signal
-        self._model.agent_updated.connect(self.update_agent_on_gui)
+        self._agents_model.agent_updated.connect(self.update_agent_on_gui)
 
     def update_agent_on_gui(self, environment, agent_name): # TODO rivedere
-        agent = self._model.get_agent(environment, agent_name)
+        agent = self._agents_model.get_agent(environment, agent_name)
         max_episodes = agent.max_episodes
         current_episode = agent.episode
 
@@ -182,16 +186,16 @@ class AgentsWindow(QMainWindow):
         #self.setEnabled(False)
         if self.agent_details_window is not None:
             pos, size = self.agent_details_window.pos(), self.agent_details_window.size()
-            self.agent_details_window = AgentDetailWindow(self._model, environment, agent)
+            self.agent_details_window = AgentDetailWindow(self._agents_model, environment, agent)
             self.agent_details_window.move(pos)
             self.agent_details_window.resize(size)
         else:
-            self.agent_details_window = AgentDetailWindow(self._model, environment, agent)
+            self.agent_details_window = AgentDetailWindow(self._agents_model, environment, agent)
         self.agent_details_window.show()
 
     def create_agent_click_slot(self):
         environment = self.ui.environments_tabs.currentWidget().objectName().split(self.sep)[0]
-        self.games = GamesController(environment, self._model)
+        self.games = GamesController(environment, self._agents_model)
 
 
     # TODO stop threads in TrainingManager on exit?

@@ -27,7 +27,7 @@ class GamesController:
         # env
         self.env = env
 
-        # agents_model
+        # _agents_model
         self.agents_model = agents_model
 
         # games_model
@@ -114,7 +114,7 @@ class GamesController:
 
     def train_agent_slot(self):
         if self.agents_model is None:
-            print("Error: agents_model is None")
+            print("Error: _agents_model is None")
             return
         self.agents_model.create_agent(self.env, self.games_model.ranked_games)
         self.view.close()
