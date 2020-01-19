@@ -3,6 +3,7 @@ from datetime import datetime
 import sys
 import gym
 import os
+import json
 
 from PyQt5 import QtGui, QtCore, QtWidgets
 from PyQt5.QtGui import QPixmap
@@ -58,10 +59,6 @@ class GamesController:
 
         # connect buttons events to slots
         self.view.ui.new_game_pb.clicked.connect(lambda: self.create_new_game(env))
-        # self.view.ui.remove_game_pb.clicked.connect(lambda: self.model.remove_game('games', 0))
-        # self.view.ui.remove_game_pb.clicked.connect(lambda: self.games_model.remove_game('games', 0))
-        # self.view.ui.train_pb.clicked.connect(self.train_agent_slot)
-
 
     def create_new_game(self, env):
         """
@@ -106,9 +103,9 @@ class NewGameView(QDialog):
         self.game.interrupt()
         return super().close()
 
-
-if __name__ == '__main__':
-    app = QApplication(sys.argv)
-    window = GamesController(env_used)
-    # window.show()
-    sys.exit(app.exec_())
+#
+# if __name__ == '__main__':
+#     app = QApplication(sys.argv)
+#     window = GamesController(env_used)
+#     # window.show()
+#     sys.exit(app.exec_())
