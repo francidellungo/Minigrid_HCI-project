@@ -100,5 +100,5 @@ class Ui_MainWindow(object):
         self.new_game_pb.setText(_translate("MainWindow", "New game"))
         self.train_pb.setText(_translate("MainWindow", "Train"))
         self.game_list_title.setText(_translate("MainWindow", "Game list"))
-        self.game_ranking_title.setText(_translate("MainWindow", "Game ranking"))
+        self.game_ranking_title.setText(_translate("MainWindow", "Game ranking (best to worst)"))
 

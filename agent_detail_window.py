@@ -77,7 +77,7 @@ class AgentDetailWindow(QMainWindow):
     def display_games(self):
         games = self.agents_model.get_agent(self.environment, self.agent_key).games
         # TODO usare questa lista di games per creare la grafica sulla destra
-        for game in games:
+        for game in reversed(games):
             self.add_row(game)
 
     def add_row(self, folder_name):
