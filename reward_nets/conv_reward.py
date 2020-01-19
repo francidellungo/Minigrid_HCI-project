@@ -3,7 +3,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
 
-from utils import conv_output_size
+from utils import conv_output_size, get_num_channels
 
 from reward_nets.base_reward_net import RewardNet
 
@@ -14,7 +14,7 @@ class ConvRewardNet(RewardNet):
         self.input_shape = input_shape
 
         # simple net with: 2D convolutional layer -> activation layer -> fully connected layer
-        self.conv = nn.Conv2d(in_channels=1, out_channels=64, kernel_size=2)
+        self.conv = nn.Conv2d(in_channels=get_num_channels(), out_channels=64, kernel_size=2)
         o = conv_output_size(input_shape[1], 2, 0, 1)
         self.fc = nn.Linear(64 * o * o, 1)
 

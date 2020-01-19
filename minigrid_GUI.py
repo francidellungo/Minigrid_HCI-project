@@ -74,7 +74,7 @@ path_of_image = 'games/MiniGrid-Empty-6x6-v0/2019-12-11_13:40:14/game'
 games_path = 'games'
 env = 'MiniGrid-Empty-6x6-v0'
 
-# os.path.join(game_directory, 'game.json')
+# os.path.join(folder, 'game.json')
 
 class MainWindow(QMainWindow):
     def __init__(self):

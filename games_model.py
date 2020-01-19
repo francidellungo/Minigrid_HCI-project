@@ -52,16 +52,16 @@ class GamesModel(QObject):
                 # self.games[str(game)] = {'name': 'game' + str(idx), 'list': 'games'}
                 self.n_games += 1
 
-    def new_game(self, env, folder_name, game_name):
+    def new_game(self, env, game_key):
         """
         create and add a new game
         :param name: game name
         :return:
         """
-        self.games_list.append(folder_name)
-        print(folder_name, 'folder_name')
+        self.games_list.append(game_key)
+        print('added new game with game_key:', game_key)
         # new_game = {'name': name, 'folder_name': folder_name, 'list': 'games'}
-        self.new_game_s.emit(env, folder_name)
+        self.new_game_s.emit(env, game_key)
         self.n_games += 1
 
     def move_game(self, current_list, game_name):

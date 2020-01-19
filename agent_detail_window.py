@@ -7,10 +7,11 @@ import gym
 import gym_minigrid
 from PyQt5 import QtGui
 from PyQt5.QtCore import QTimer
-from PyQt5.QtGui import QMovie, QPixmap
+from PyQt5.QtGui import QMovie, QPixmap, QImage
 from PyQt5.QtWidgets import QMainWindow, QMessageBox, QHBoxLayout, QLabel, QPushButton, QWidget
 
 from agent_detail_ui import Ui_Agent
+from utils import nparray_to_qpixmap, state_filter
 
 games_path = 'games'
 
@@ -76,8 +77,7 @@ class AgentDetailWindow(QMainWindow):
 
     def display_games(self):
         games = self.agents_model.get_agent(self.environment, self.agent_key).games
-        # TODO usare questa lista di games per creare la grafica sulla destra
-        for game in games:
+        for game in reversed(games):
             self.add_row(game)
 
     def add_row(self, folder_name):
@@ -143,7 +143,7 @@ class GameThread(Thread):
         while self._running:
             img = self.env.render("pixmap")
             try:
-                self.game_widget.setPixmap(img)
+                self.game_widget.setPixmap(nparray_to_qpixmap(img))
             except RuntimeError:
                 break
 
@@ -157,7 +157,7 @@ class GameThread(Thread):
                 done = False
                 continue
 
-            action = self.agent.sample_action(self.agent.state_filter(state))
+            action = self.agent.sample_action(state_filter(state))
             state, reward, done, info = self.env.step(action)
 
     def interrupt(self):
