@@ -179,6 +179,7 @@ def keyDownCb(keyName):
         else:
             act_action(env, action)
 
+
 def main():
     global one_game
     one_game = False
@@ -257,45 +258,6 @@ def main():
             break
 
 
-def minigrid_play_one():
-    global one_game
-    one_game = True
-
-    global game_name, game_info, options, env, device
-
-    parser = OptionParser()
-    parser.add_option(
-        "-e",
-        "--env-name",
-        dest="env_name",
-        help="gym environment to load",
-        default='MiniGrid-Empty-6x6-v0'
-    )
-
-    (options, args) = parser.parse_args()
-
-    # use GPU if available, otherwise use CPU
-    device = "cuda" if torch.cuda.is_available() else "cpu"
-
-    # Load the gym environment
-    env = gym.make(options.env_name)
-
-    state = reset_env(env)
-
-    # Create a window to render into
-    renderer = env.render('human')
-
-    # set controls
-    renderer.window.setKeyDownCb(keyDownCb)
-
-    done = False
-    while not done:
-        env.render('human')
-
-        if renderer.window is None:
-            break
-
-
 if __name__ == "__main__":
-    minigrid_play_one()
+    main()
 
