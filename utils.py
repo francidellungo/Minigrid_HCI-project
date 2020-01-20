@@ -89,28 +89,33 @@ def auto_device():
 
 
 def load_policy(policy_arg, device='auto'):
+    return _load_net(policy_arg, "policy_net-", device)
 
-    if policy_arg is None:
+
+def load_reward(reward_arg, device='auto'):
+    return _load_net(reward_arg, "reward_net-", device)
+
+
+def _load_net(arg, prefix, device='auto'):
+    if arg is None:
         return None
-
     if device == 'auto':
         device = auto_device()
 
-    if policy_arg.endswith(".pth"):
+    if arg.endswith(".pth"):
         # select specified weights
-        epoch_to_load_weights = policy_arg.rsplit("-", 1)[1].split(".", 1)[0]
-        policy_net_dir = os.path.dirname(policy_arg)
+        checkpoint_to_load_weights = arg.rsplit("-", 1)[1].split(".", 1)[0]
+        net_dir = os.path.dirname(arg)
 
     else:
         # load the most recent weights from the specified folder
-        episodes_saved_weights = [int(state.rsplit("-", 1)[1].split(".", 1)[0]) for state in
-                                  glob(os.path.join(policy_arg, "policy_net-*.pth"))]
-        epoch_to_load_weights = max(episodes_saved_weights)
-        policy_net_dir = policy_arg
+        checkpoints_saved_weights = [int(state.rsplit("-", 1)[1].split(".", 1)[0]) for state in glob(os.path.join(arg, prefix + "*.pth"))]
+        checkpoint_to_load_weights = max(checkpoints_saved_weights)
+        net_dir = arg
 
-    agent = pickle.load(open(os.path.join(policy_net_dir, "net.pkl"), "rb")).to(device)
-    agent.load_state_dict(torch.load(os.path.join(policy_net_dir, "policy_net-" + str(epoch_to_load_weights) + ".pth"), map_location=device))
-    return agent.to(device)
+    net = pickle.load(open(os.path.join(net_dir, "net.pkl"), "rb")).to(device)
+    net.load_state_dict(torch.load(os.path.join(net_dir, prefix + str(checkpoint_to_load_weights) + ".pth"), map_location=device))
+    return net.to(device)
 
 
 def nparray_to_qpixmap(img):

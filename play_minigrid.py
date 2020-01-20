@@ -19,20 +19,22 @@ import gym_minigrid
 from gym_minigrid.wrappers import *
 from gym_minigrid.window import Window
 
-from utils import state_filter, nparray_to_qpixmap, print_observation, get_all_environments, load_policy
+from utils import state_filter, nparray_to_qpixmap, print_observation, get_all_environments, load_policy, load_reward
 
 
 class Game:
-    def __init__(self, env, seed=-1, agent_view=False, games_directory=None, refresh_callback=None, end_callback=None, handle_special_keys=True, policy=None, max_games=-1, waiting_time=0, autosave=True):
+    def __init__(self, env, seed=-1, agent_view=False, games_directory=None, refresh_callback=None, end_callback=None, handle_special_keys=True, policy_net=None, max_games=-1, waiting_time=0, reward_net=None, autosave=True):
         self.env = env
         self.seed = seed
         self.agent_view = agent_view
         self.games_directory = games_directory
         self.handle_special_keys = handle_special_keys
-        self.policy = policy
+        self.policy_net = policy_net
         self.max_games = max_games
         self.waiting_time = waiting_time
+        self.reward_net = reward_net
         self.autosave = autosave
+
         self.num_games_ended = 0
 
         if games_directory is not None:
@@ -54,7 +56,7 @@ class Game:
 
         self.reset()
 
-        if policy is not None:
+        if policy_net is not None:
             self.thread = Thread(target=self._autoplay)
             self.thread.start()
 
@@ -82,6 +84,8 @@ class Game:
             self.env.seed(self.seed)
 
         self.obs = self.env.reset()
+        self.tot_env_reward = 0
+        self.tot_net_reward = 0
 
         if hasattr(self.env, 'mission'):
             print('Mission: %s' % self.env.mission)
@@ -116,7 +120,7 @@ class Game:
         obs, reward, done, info = self.env.step(action)
         self.obs = obs
         print_observation(self.obs)
-        print('step=%s, reward=%.2f' % (self.env.step_count, reward))
+        self.print_step_details(reward, obs)
 
         if self.games_directory is not None:
             # Save state
@@ -230,13 +234,22 @@ class Game:
     def _autoplay(self):
         self._running = True
         while self._running:
-            action = self.policy.sample_action(state_filter(self.obs))
+            action = self.policy_net.sample_action(state_filter(self.obs))
             self.step(action)
             if self.waiting_time > 0:
                 time.sleep(self.waiting_time)
 
     def interrupt(self):
         self._running = False
+
+    def print_step_details(self, env_reward, obs):
+        self.tot_env_reward += env_reward
+        output = 'step=%s\nenv_reward=%.2f, tot_env_reward=%.2f' % (self.env.step_count, env_reward, self.tot_env_reward)
+        if self.reward_net is not None:
+            net_reward = self.reward_net(state_filter(obs))
+            self.tot_net_reward += net_reward
+            output += '\nnet_reward=%.2f, tot_net_reward=%.2f' % (net_reward, self.tot_net_reward)
+        print(output)
 
 
 if __name__ == "__main__":
@@ -246,8 +259,8 @@ if __name__ == "__main__":
     parser.add_argument("-s", "--seed", type=int, help="Random seed to generate the environment with", default=-1)
     parser.add_argument("-av", '--agent_view', default=False, help="Draw the agent sees (partially observable view). Default: False", action='store_true')
     parser.add_argument("-g", "--games_dir", help="Directory where to save games. Default: games aren't saved", default=None)
-    parser.add_argument("-p", "--policy", help="Policy net to use as agent. Default: no policy, the game is the user", default=None)
-    parser.add_argument("-r", "--reward", help="Reward net to evalute. Default: None", default=None)
+    parser.add_argument("-p", "--policy_net", help="Policy net to use as agent. Default: no policy_net, the game is the user", default=None)
+    parser.add_argument("-r", "--reward_net", help="Reward net to evalute. Default: None", default=None)
     parser.add_argument("-mg", "--max_games", help="Maximum number of games to play. Default: no limits", type=int, default=-1)
     parser.add_argument("-wt", "--waiting_time", help="Policy waiting time (seconds) between moves. Default: 0", type=float, default=0)
 
@@ -259,7 +272,8 @@ if __name__ == "__main__":
         env = RGBImgPartialObsWrapper(env)
         env = ImgObsWrapper(env)
 
-    policy = load_policy(args.policy)
+    policy_net = load_policy(args.policy_net)
+    reward_net = load_reward(args.reward_net)
 
     if args.backend == "qt":
         app = QApplication(sys.argv)
@@ -272,14 +286,14 @@ if __name__ == "__main__":
         v_layout.addWidget(widget_caption)
         window.setCentralWidget(central_widget)
         redraw = lambda img: (widget_game.setPixmap(nparray_to_qpixmap(img)), widget_caption.setText(env.mission))
-        game = Game(env, args.seed, args.agent_view, args.games_dir, redraw, lambda:..., True, policy, args.max_games, args.waiting_time)
+        game = Game(env, args.seed, args.agent_view, args.games_dir, redraw, lambda:..., True, policy_net, args.max_games, args.waiting_time, reward_net)
         window.keyPressEvent = game.qt_key_handler
         window.show()
         sys.exit(app.exec_())
     elif args.backend == "plt":
         window = Window('gym_minigrid - ' + args.env)
         redraw = lambda img: (window.show_img(img), window.set_caption(env.mission))
-        game = Game(env, args.seed, args.agent_view, args.games_dir, redraw, lambda:..., True, policy, args.max_games, args.waiting_time)
+        game = Game(env, args.seed, args.agent_view, args.games_dir, redraw, lambda:..., True, policy_net, args.max_games, args.waiting_time, reward_net)
         window.reg_key_handler(game.plt_key_handler)
         # Blocking event loop
         window.show(block=True)
