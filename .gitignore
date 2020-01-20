@@ -1,6 +1,3 @@
 *.pyc
-gym-minigrid/*
 games/*
-games_old/*
-#some examples for GUI
-image/*
+.idea

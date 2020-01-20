@@ -1,3 +1,4 @@
+import json
 from datetime import datetime
 import sys
 import gym
@@ -8,12 +9,14 @@ from PyQt5 import QtGui, QtCore, QtWidgets
 from PyQt5.QtGui import QPixmap
 from PyQt5.QtCore import Qt, pyqtSignal, QEvent
 from PyQt5.QtWidgets import QApplication, QMainWindow, QDialog, QLabel, QPushButton, QHBoxLayout
+from sklearn.ensemble._gradient_boosting import np_float32
+
 from games_model import GamesModel
 from games_view import GamesView
 from Ui_scrollbar_v2 import Ui_MainWindow
 from Ui_newGame import Ui_new_game_Dialog
-# from play_minigrid import main
-# from play_minigrid_one import *
+from play_minigrid import Game
+from utils import *
 
 env_used = 'MiniGrid-Empty-6x6-v0'
 games_path = 'games'
@@ -70,8 +73,6 @@ class GamesController:
 
 class NewGameView(QDialog):
 
-    game_saved = pyqtSignal(str, str, str)  # str: game_folder name
-
     def __init__(self, environment, games_model):
         super().__init__()
         self.ui = Ui_new_game_Dialog()
@@ -79,155 +80,28 @@ class NewGameView(QDialog):
         self.games_model = games_model
         self.env = gym.make(environment)
         self.env_name = environment
-        # self.keyDownCb = None
-        self.done = False
-        self.game_folder = None
         self.ui.game_buttonBox.button(QtWidgets.QDialogButtonBox.Save).setEnabled(False)
-
-        self.reset_env(self.env_name)
-        pixmap = self.env.render('pixmap')
-        self.ui.game_label.setPixmap(pixmap)
+        # self.ui.game_buttonBox.accepted.connect(self.accept)
 
         self.show()
+        self.game = Game(self.env, games_directory=games_dir(), refresh_callback=self.update_gui, end_callback=self.enable_save, handle_special_keys=False, max_games=1, autosave=False)
+        self.ui.game_buttonBox.button(QtWidgets.QDialogButtonBox.Save).clicked.connect(self.on_save)
+        self.keyPressEvent = self.game.qt_key_handler
 
-    def accept(self) -> str:
-        global game_directory
+    def update_gui(self, img):
+        self.ui.game_label.setPixmap(nparray_to_qpixmap(img))
 
-        k = 1
-        print('accept event _ ', self.game_folder)
-        original_game_directory = game_directory
-        while os.path.exists(game_directory):
-            game_directory = original_game_directory + "_" + str(k)
-            k += 1
-        os.makedirs(game_directory)
+    def enable_save(self):
+        self.ui.game_buttonBox.button(QtWidgets.QDialogButtonBox.Save).setEnabled(True)
 
-        # Save image of each state
-        for screenshot_file, pixmap in screenshots:
-            pixmap.save(os.path.join(game_directory, screenshot_file))
-
-        game_info["score"] = sum(game_info["rewards"])
-        with open(os.path.join(game_directory, 'game.json'), 'w+') as game_file:
-            json.dump(game_info, game_file, ensure_ascii=False)
-
-        # self.game_saved.emit(self.env_name, self.game_folder, 'game_ ')
-        self.games_model.new_game(self.env_name, self.game_folder, self.game_folder)
+    def on_save(self):
+        self.game.save()
+        self.games_model.new_game(self.env_name, os.path.basename(self.game.folder))
         self.close()
-        return self.game_folder
 
-    def act_action(self, action):
-        """
-        calculate new state (obs), save image of the state and if finished reset the environment
-        :param env: gym environment used
-        :param action: action taken
-        :return:
-        """
-        global game_directory
-        # if action == env.actions.done:
-        #     done = True
-        # else:
-
-        obs, reward, done, info = self.env.step(action)
-        pixmap = self.env.render('pixmap')
-        self.ui.game_label.setPixmap(pixmap)
-
-        print("state: ", self.state_filter(obs))
-
-        # Save state
-        game_info['trajectory'].append(self.state_filter(obs).tolist())
-        game_info['rewards'].append(reward)
-
-        print('step=%s, reward=%.2f' % (self.env.step_count, reward))
-
-        # Save screenshots
-        screenshot_file = 'game' + str(self.env.step_count) + '.png'
-        pixmap = self.env.render('pixmap')
-        screenshots.append((screenshot_file, pixmap))
-
-        if done:
-            print('done!', len(game_info['trajectory']))
-
-            pixmap = self.env.render('pixmap')
-            self.ui.game_label.setPixmap(pixmap)
-            self.env.close()
-            self.ui.game_buttonBox.button(QtWidgets.QDialogButtonBox.Save).setEnabled(True)
-            self.done = True
-
-        # if action == self.env.actions.done:
-        #     return obs, None, True, None
-        return obs, reward, done, info
-
-    def state_filter(self, state):
-        return state['image'][:, :, 0]
-
-    def reset_env(self, env_name):
-        """
-        reset the environment, initialize game_name, game_info and directory
-
-        :param env: gym environment used
-        :return:
-        """
-        global game_name, game_info, game_directory, screenshots
-        state = self.env.reset()
-
-        # if hasattr(env, 'mission'):
-        #     print('Mission: %s' % self.env.mission)
-
-        # Get timestamp to identify this game
-        game_name = datetime.now().strftime("%Y-%m-%d_%H:%M:%S")
-        print('New game: ', game_name)
-
-        # Dictionary for game information
-        game_info = {
-            'name': game_name,
-            'trajectory': [self.state_filter(state).tolist()],
-            'rewards': [0],
-            'score': None,
-            'to_delete': False
-        }
-
-        game_directory = os.path.join(games_path, env_name, str(game_name))
-
-        screenshot_file = 'game' + str(self.env.step_count) + '.png'
-        pixmap = self.env.render('pixmap')
-        screenshots = [(screenshot_file, pixmap)]
-
-        self.game_folder = game_name
-
-        return state, game_directory, pixmap
-
-    def keyPressEvent(self, QKeyEvent):
-        # print('key press event', QEvent.KeyPress)
-        if QKeyEvent.type() == QEvent.KeyPress and not self.done:
-            if QKeyEvent.key() == Qt.Key_A:
-                action = self.env.actions.left
-                # self.sig_key_left.emit()
-                # QKeyEvent.accept()
-
-            elif QKeyEvent.key() == Qt.Key_D:
-                action = self.env.actions.right
-                # self.sig_key_right.emit()
-                # QKeyEvent.accept()
-
-            elif QKeyEvent.key() == Qt.Key_W:
-                action = self.env.actions.forward
-                # self.sig_key_home.emit()
-                # QKeyEvent.accept()
-            elif QKeyEvent.key() == Qt.Key_P:
-                action = self.env.actions.pickup
-            elif QKeyEvent.key() == Qt.Key_O:
-                action = self.env.actions.drop
-            elif QKeyEvent.key() == Qt.Key_I:
-                action = self.env.actions.toggle
-
-            else:
-                print("unknown key %s" % QKeyEvent.key())
-                return
-
-            # elif QKeyEvent.key() == Qt.Key_End:
-            #     self.sig_key_end.emit()
-            #     QKeyEvent.accept()
-
-            self.act_action(action)
+    def close(self) -> bool:
+        self.game.interrupt()
+        return super().close()
 
 #
 # if __name__ == '__main__':

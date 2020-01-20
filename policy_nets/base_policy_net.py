@@ -13,6 +13,8 @@ from torch.distributions.categorical import Categorical
 
 from torchsummary import summary
 
+from utils import get_input_shape, state_filter
+
 
 class PolicyNet(nn.Module):
 
@@ -57,6 +59,8 @@ class PolicyNet(nn.Module):
 
     def fit(self, episodes=100, batch_size=16, reward_loader=lambda:..., render=False, autosave=False, episodes_for_checkpoint=None, reward_net_key=None, reward_net_games=None,callbacks=[]):
         self.max_episodes = self.episode + episodes
+
+        # TODO vedere se c'è verso prenderli dalla reward net invece che come parametro
         self.reward_net_key = reward_net_key
         self.games = reward_net_games
 
@@ -177,10 +181,6 @@ class PolicyNet(nn.Module):
             if "on_train_end" in callback:
                 callback["on_train_end"](self)
 
-    ''' transform environment observation into neural network input '''
-    def state_filter(self, state):
-        return torch.from_numpy(state['image'][:, :, 0]).float().to(self.current_device()) # TODO considerare tutti i canali invece che solo il primo?
-
     ''' sample an action from the distribution given by the policy net '''
     def sample_action(self, state):
         actions_logits = self(state)
@@ -191,7 +191,7 @@ class PolicyNet(nn.Module):
     ''' run an episode and return all relevant information '''
     def run_episode(self, max_length, reward_net=None, gamma=0.99, render=False):
         with torch.no_grad():  # for the reward net the gradient is not required
-            state = self.state_filter(self.env.reset())
+            state = state_filter(self.env.reset(), self.current_device())
 
             states = [state]
             actions = []
@@ -207,7 +207,7 @@ class PolicyNet(nn.Module):
                 # execute action
                 state, true_reward, done, _ = self.env.step(action)
 
-                state = self.state_filter(state)
+                state = state_filter(state, self.current_device())
 
                 # use reward from the reward net if it exists, otherwise use environment reward
                 if reward_net is not None:
@@ -233,9 +233,8 @@ class PolicyNet(nn.Module):
 
         with open(os.path.join(self.folder, "training.json"), "wt") as file:
             reward_type = "env" if reward is None else "net"
-            # (7,7,3) == self.env.observation_space.spaces['image'].shape
             with io.StringIO() as out, redirect_stdout(out):
-                summary(self, (1, 7, 7))
+                summary(self, get_input_shape())
                 net_summary = out.getvalue()
             print(net_summary)
             name = os.path.basename(os.path.normpath(self.folder))

@@ -14,6 +14,8 @@ import torch.nn as nn
 from tensorboardX import SummaryWriter
 from torchsummary import summary
 
+from utils import get_input_shape
+
 
 class RewardNet(nn.Module):
 
@@ -280,12 +282,15 @@ class RewardNet(nn.Module):
 
         true_mx = max(true_trajectories_scores)
         true_mn = min(true_trajectories_scores)
-        assert true_mx > true_mn
+        assert true_mx >= true_mn
 
         trajectories_scores = [sum(scores).item() for scores in trajectories_scores]
         mx = max(trajectories_scores)
         mn = min(trajectories_scores)
-        assert mx > mn
+        assert mx >= mn
+
+        if mx == mn:
+            return np.nan
 
         normalized_trajectories_scores = [(s-mn)/(mx-mn)*(true_mx-true_mn) + true_mn for s in trajectories_scores]
         # print("corr")
@@ -301,9 +306,8 @@ class RewardNet(nn.Module):
             os.makedirs(self.folder)
 
         with open(os.path.join(self.folder, "training.json"), "wt") as file:
-            # (7,7,3) == self.env.observation_space.spaces['image'].shape
             with io.StringIO() as out, redirect_stdout(out):
-                summary(self, (1, 7, 7)) # TODO sistemare questo shape
+                summary(self, get_input_shape())
                 net_summary = out.getvalue()
             print(net_summary)
             j = {"type": str(type(self)), "str": str(self).replace("\n", ""), "optimizer": str(self.optimizer),

@@ -1,7 +1,15 @@
 import os
+import pickle
 from glob import glob
 
 import torch
+from PyQt5.QtGui import QImage, QPixmap
+from termcolor import colored
+import numpy as np
+
+
+def games_dir():
+    return "games"
 
 
 def conv_output_size(input_size, filter_size, padding=0, stride=1):
@@ -16,7 +24,34 @@ def conv_output_size(input_size, filter_size, padding=0, stride=1):
 
 
 def get_input_shape():
-    return 1, 7, 7
+    return 3, 7, 7
+
+
+def get_num_channels():
+    return get_input_shape()[0]
+
+
+def state_filter(obs, device='auto'):
+    """
+    :param device: device where to put the returned torch tensor
+    :param obs: environment observation
+    :return: torch 7x7x3 tensor
+    """
+
+    if device == 'auto':
+        device = auto_device()
+
+    return torch.from_numpy(obs['image']).float().permute(2, 0, 1).to(device)
+
+
+def print_observation(obs, flip=True):
+    colors = ["red", "green", "blue"]
+    print()
+    for i, color in enumerate(colors):
+        obs_channel_i = obs['image'][:, :, i]
+        if flip:
+            obs_channel_i = np.flip(obs_channel_i, axis=1)
+        print(colored(obs_channel_i, color))
 
 
 def get_num_actions():
@@ -47,3 +82,36 @@ def get_all_environments():
     #         "MiniGrid-SimpleCrossingS9N2-v0", "MiniGrid-SimpleCrossingS9N3-v0", "MiniGrid-SimpleCrossingS11N5-v0", "MiniGrid-Dynamic-Obstacles-5x5-v0",
     #         "MiniGrid-Dynamic-Obstacles-Random-5x5-v0", "MiniGrid-Dynamic-Obstacles-6x6-v0", "MiniGrid-Dynamic-Obstacles-Random-6x6-v0",
     #         "MiniGrid-Dynamic-Obstacles-8x8-v0", "MiniGrid-Dynamic-Obstacles-16x16-v0"]
+
+
+def auto_device():
+    return "cuda" if torch.cuda.is_available() else "cpu"
+
+
+def load_policy(policy_arg, device='auto'):
+
+    if policy_arg is None:
+        return None
+
+    if device == 'auto':
+        device = auto_device()
+
+    if policy_arg.endswith(".pth"):
+        # select specified weights
+        epoch_to_load_weights = policy_arg.rsplit("-", 1)[1].split(".", 1)[0]
+        policy_net_dir = os.path.dirname(policy_arg)
+
+    else:
+        # load the most recent weights from the specified folder
+        episodes_saved_weights = [int(state.rsplit("-", 1)[1].split(".", 1)[0]) for state in
+                                  glob(os.path.join(policy_arg, "policy_net-*.pth"))]
+        epoch_to_load_weights = max(episodes_saved_weights)
+        policy_net_dir = policy_arg
+
+    agent = pickle.load(open(os.path.join(policy_net_dir, "net.pkl"), "rb")).to(device)
+    agent.load_state_dict(torch.load(os.path.join(policy_net_dir, "policy_net-" + str(epoch_to_load_weights) + ".pth"), map_location=device))
+    return agent.to(device)
+
+
+def nparray_to_qpixmap(img):
+    return QPixmap(QImage(img, img.shape[1], img.shape[0], img.shape[1] * 3, QImage.Format_RGB888))
