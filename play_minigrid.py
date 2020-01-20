@@ -272,14 +272,14 @@ if __name__ == "__main__":
         v_layout.addWidget(widget_caption)
         window.setCentralWidget(central_widget)
         redraw = lambda img: (widget_game.setPixmap(nparray_to_qpixmap(img)), widget_caption.setText(env.mission))
-        game = Game(env, args.seed, args.agent_view, args.games_dir, redraw, True, policy, args.max_games, args.waiting_time)
+        game = Game(env, args.seed, args.agent_view, args.games_dir, redraw, lambda:..., True, policy, args.max_games, args.waiting_time)
         window.keyPressEvent = game.qt_key_handler
         window.show()
         sys.exit(app.exec_())
     elif args.backend == "plt":
         window = Window('gym_minigrid - ' + args.env)
         redraw = lambda img: (window.show_img(img), window.set_caption(env.mission))
-        game = Game(env, args.seed, args.agent_view, args.games_dir, redraw, True, policy, args.max_games, args.waiting_time)
+        game = Game(env, args.seed, args.agent_view, args.games_dir, redraw, lambda:..., True, policy, args.max_games, args.waiting_time)
         window.reg_key_handler(game.plt_key_handler)
         # Blocking event loop
         window.show(block=True)
