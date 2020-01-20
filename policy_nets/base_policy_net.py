@@ -48,7 +48,7 @@ class PolicyNet(nn.Module):
         self.folder = folder
 
         if resume:
-            self._load_last_checkpoint()
+            self.load_last_checkpoint()
 
     @abstractmethod
     def forward(self, x):
@@ -261,7 +261,7 @@ class PolicyNet(nn.Module):
         torch.save(self.state_dict(), checkpoints_file)
         return self
 
-    def _load_last_checkpoint(self):
+    def load_last_checkpoint(self):
         # load the most recent weights from the folder of this policy
         episode_to_load_weights = self._get_last_saved_policy_episode()
 
