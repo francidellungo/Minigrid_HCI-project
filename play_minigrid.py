@@ -19,7 +19,8 @@ import gym_minigrid
 from gym_minigrid.wrappers import *
 from gym_minigrid.window import Window
 
-from utils import state_filter, nparray_to_qpixmap, print_observation, get_all_environments, load_policy, load_reward
+from policy_nets.base_policy_net import PolicyNet
+from utils import *
 
 
 class Game:
@@ -82,10 +83,13 @@ class Game:
 
         if self.seed != -1:
             self.env.seed(self.seed)
+            print("seed {} set".format(self.seed))
 
         self.obs = self.env.reset()
         self.tot_env_reward = 0
         self.tot_net_reward = 0
+        self.env_rewards = []
+        self.net_rewards = []
 
         if hasattr(self.env, 'mission'):
             print('Mission: %s' % self.env.mission)
@@ -134,6 +138,8 @@ class Game:
         self._refresh_gui(obs)
         if done:
             print('done!')
+            self.print_rewards()
+            self.print_discounted_rewards()
             if self.games_directory is not None and self.autosave:
                 self.save()
 
@@ -155,7 +161,7 @@ class Game:
                 exit(0)
         if self.num_games_ended == self.max_games:
             return
-        print('pressed', event.key)
+        print('\npressed', event.key)
         if event.key == 'left':
             action = self.env.actions.left
         elif event.key == 'right':
@@ -174,7 +180,7 @@ class Game:
             self.reset()
             return
         else:
-            print("unknown key %s" % event.key)
+            print("\nunknown key %s" % event.key)
             return
         self.step(action)
 
@@ -185,7 +191,7 @@ class Game:
             exit(0)
         if self.num_games_ended == self.max_games:
             return
-        print("pressed " + qt_key_event.text())
+        print("\npressed " + qt_key_event.text())
         if qt_key_event.key() == Qt.Key_A or qt_key_event.key() == Qt.Key_Left:
             action = self.env.actions.left
         elif qt_key_event.key() == Qt.Key_D or qt_key_event.key() == Qt.Key_Right:
@@ -204,7 +210,7 @@ class Game:
             self.reset()
             return
         else:
-            print("unknown key %s" % qt_key_event.key())
+            print("\nunknown key %s" % qt_key_event.key())
             return
 
         self.step(action)
@@ -243,12 +249,34 @@ class Game:
         self._running = False
 
     def print_step_details(self, env_reward, obs):
+        self.env_rewards.append(env_reward)
         self.tot_env_reward += env_reward
         output = 'step=%s\nenv_reward=%.2f, tot_env_reward=%.2f' % (self.env.step_count, env_reward, self.tot_env_reward)
         if self.reward_net is not None:
-            net_reward = self.reward_net(state_filter(obs))
+            net_reward = self.reward_net(state_filter(obs)).item()
+            self.net_rewards.append(net_reward)
             self.tot_net_reward += net_reward
             output += '\nnet_reward=%.2f, tot_net_reward=%.2f' % (net_reward, self.tot_net_reward)
+        print(output)
+
+    def print_rewards(self):
+        output = "env_rewards: " + str(rounded_list(self.env_rewards))
+        if self.reward_net is not None:
+            output += "\nnet_rewards: " + str(rounded_list(self.net_rewards))
+        output += "\nenv_normalized_rewards: " + str(rounded_list(normalize(self.env_rewards)))
+        if self.reward_net is not None:
+            output += "\nnet_normalized_rewards: " + str(rounded_list(normalize(self.net_rewards)))
+        print(output)
+
+    def print_discounted_rewards(self):
+        env_discounted_rewards = PolicyNet.compute_discounted_rewards(self.env_rewards)
+        output = "env_discounted_rewards: " + str(rounded_list(env_discounted_rewards))
+        if self.reward_net is not None:
+            net_discounted_rewards = PolicyNet.compute_discounted_rewards(self.net_rewards)
+            output += "\nnet_discounted_rewards: " + str(rounded_list(net_discounted_rewards))
+        output += "\nenv_normalized_discounted_rewards: " + str(rounded_list(normalize(env_discounted_rewards)))
+        if self.reward_net is not None:
+            output += "\nnet_normalized_discounted_rewards: " + str(rounded_list(normalize(net_discounted_rewards)))
         print(output)
 
 
@@ -272,8 +300,8 @@ if __name__ == "__main__":
         env = RGBImgPartialObsWrapper(env)
         env = ImgObsWrapper(env)
 
-    policy_net = load_policy(args.policy_net)
-    reward_net = load_reward(args.reward_net)
+    policy_net = load_policy(args.policy_net, True)
+    reward_net = load_reward(args.reward_net, True)
 
     if args.backend == "qt":
         app = QApplication(sys.argv)

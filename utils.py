@@ -46,7 +46,6 @@ def state_filter(obs, device='auto'):
 
 def print_observation(obs, flip=True):
     colors = ["red", "green", "blue"]
-    print()
     for i, color in enumerate(colors):
         obs_channel_i = obs['image'][:, :, i]
         if flip:
@@ -88,15 +87,15 @@ def auto_device():
     return "cuda" if torch.cuda.is_available() else "cpu"
 
 
-def load_policy(policy_arg, device='auto'):
-    return _load_net(policy_arg, "policy_net-", device)
+def load_policy(policy_arg, eval_mode=False, device='auto'):
+    return _load_net(policy_arg, "policy_net-", eval_mode, device)
 
 
-def load_reward(reward_arg, device='auto'):
-    return _load_net(reward_arg, "reward_net-", device)
+def load_reward(reward_arg, eval_mode=False, device='auto'):
+    return _load_net(reward_arg, "reward_net-", eval_mode, device)
 
 
-def _load_net(arg, prefix, device='auto'):
+def _load_net(arg, prefix, eval_mode=False, device='auto'):
     if arg is None:
         return None
     if device == 'auto':
@@ -115,8 +114,22 @@ def _load_net(arg, prefix, device='auto'):
 
     net = pickle.load(open(os.path.join(net_dir, "net.pkl"), "rb")).to(device)
     net.load_state_dict(torch.load(os.path.join(net_dir, prefix + str(checkpoint_to_load_weights) + ".pth"), map_location=device))
-    return net.to(device)
+    if eval_mode:
+        net.eval()
+    return net
 
 
 def nparray_to_qpixmap(img):
     return QPixmap(QImage(img, img.shape[1], img.shape[0], img.shape[1] * 3, QImage.Format_RGB888))
+
+def normalize(values):
+    mean = np.mean(values)
+    std = np.std(values)
+    return [(v-mean)/std for v in values]
+
+
+def rounded_list(iterator, digits=2):
+    new_list = []
+    for element in iterator:
+        new_list.append(round(element, digits))
+    return new_list

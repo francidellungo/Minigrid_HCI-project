@@ -163,11 +163,13 @@ class AgentsWindow(QMainWindow):
 
         if current_episode is not None and current_episode + 1 == max_episodes: # +1 is used because episode count starts from 0
             label_loading.setMovie(None)
+            label_loading.setVisible(False)
         else:
             if self.gif is None:
                 self.gif = QMovie(os.path.join("img", "loading.gif"))
                 self.gif.start()
             label_loading.setMovie(self.gif)
+            label_loading.setVisible(True)
 
     def delete_agent_from_gui(self, environment, agent_key):
         env_tab_widget = self.ui.environments_tabs.findChild(QWidget, environment + self.sep + "env_tab_widget")

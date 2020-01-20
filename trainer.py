@@ -42,7 +42,7 @@ class TrainerThread(Thread):
         reward_trainer.start()
         reward_net_path = reward_trainer.get_reward_net_folder()
         policy_net_key = datetime.now().strftime("%Y-%m-%d_%H:%M:%S")
-        train_policy(self.environment, reward_net_path=reward_net_path, policy_net_key=policy_net_key, callbacks=self.policy_callbacks)
+        train_policy(self.environment, reward_net_arg=reward_net_path, policy_net_key=policy_net_key, callbacks=self.policy_callbacks)
 
 
 class RewardTrainerThread(Thread):

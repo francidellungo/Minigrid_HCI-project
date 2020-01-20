@@ -54,11 +54,13 @@ class AgentDetailWindow(QMainWindow):
             self.ui.labelStatus.setText("Status: training completed")
             self.ui.progressBarTraining.setEnabled(False)
             self.ui.labelLoading.setText("")
+            self.ui.labelLoading.setVisible(False)
         else:
             self.ui.labelStatus.setText("Status: training")
             self.gif = QMovie(os.path.join("img", "loading.gif"))
             self.gif.start()
             self.ui.labelLoading.setMovie(self.gif)
+            self.ui.labelLoading.setVisible(True)
 
         self.ui.progressBarTraining.setMaximum(max_episodes)
         self.ui.progressBarTraining.setValue(current_episode+1)

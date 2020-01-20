@@ -32,14 +32,14 @@ class GamesView(QMainWindow):
         self.agents_window = agents_window
         self.ui.train_pb.clicked.connect(self.train_agent_slot)
 
-    def add_row(self, env, folder_name, list_='games', position=None):
+    def add_row(self, env, game_key, list_='games', position=None):
         """
         add row for a new game to games gui
         :param position: index of the position to insert the new row in the layout list
         :param list_: 'games' or 'rank'
         :param env: current environment used
         :param name: name for the new game
-        :param folder_name: name of the new game folder
+        :param game_key: name of the new game folder
         :return:
         """
         if list_ is 'games':
@@ -47,7 +47,7 @@ class GamesView(QMainWindow):
         else:
             row = QWidget(self.ui.ranking_verticalW)
 
-        row.setObjectName(folder_name)
+        row.setObjectName(game_key)
         horiz = QHBoxLayout(row)
 
         # move btn case list 'rank'
@@ -57,13 +57,16 @@ class GamesView(QMainWindow):
 
         # horiz = QHBoxLayout()
         # game name
-        horiz.addWidget(QLabel(folder_name))
+        horiz.addWidget(QLabel(game_key))
 
         # game imgs
-        imgs_names = [elem for elem in os.listdir(os.path.join(games_path, env, folder_name)) if elem.endswith(".png")]
+        imgs_names = [elem for elem in os.listdir(os.path.join(games_path, env, game_key)) if elem.endswith(".png")]
         imgs_names.sort()
-        dir_path = os.path.join(games_path, env, folder_name)
-        pixmap = QPixmap(os.path.join(games_path, env, folder_name, 'game0.png'))
+        dir_path = os.path.join(games_path, env, game_key)
+
+        print("adding row for game {}, num_states: {}".format(game_key, len(self.get_imgs_nums(dir_path))))
+
+        pixmap = QPixmap(os.path.join(games_path, env, game_key, 'game0.png'))
 
         img_label = QLabel()
         img_label.setPixmap(pixmap)
@@ -120,10 +123,10 @@ class GamesView(QMainWindow):
 
         if list_ == 'rank':
             # connect move up and down buttons (in ranking list)
-            move_up_btn.clicked.connect(lambda: self.games_model.move_down(folder_name))
+            move_up_btn.clicked.connect(lambda: self.games_model.move_down(game_key))
             move_up_btn.setEnabled(True)
 
-            move_down_btn.clicked.connect(lambda: self.games_model.move_up(folder_name))
+            move_down_btn.clicked.connect(lambda: self.games_model.move_up(game_key))
             move_down_btn.setEnabled(True)
 
         self.check_enable_btn()
@@ -235,8 +238,11 @@ class GamesView(QMainWindow):
         # print(self.games_model.ranked_games)
         # print(self.ui.ranking_verticalLayout)
 
+    def get_imgs_nums(self, games_dir):
+        return [elem.split('game')[1].split('.')[0] for elem in os.listdir(games_dir) if elem.endswith(".png")]
+
     def show_traj_imgs(self, games_dir, img_label, timer):
-        imgs_nums = [elem.split('game')[1].split('.')[0] for elem in os.listdir(games_dir) if elem.endswith(".png")]
+        imgs_nums = self.get_imgs_nums(games_dir)
         imgs_nums.sort(key=int)
         imgs = ['game' + str(img_num) + '.png' for img_num in imgs_nums]
 
