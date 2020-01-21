@@ -77,6 +77,9 @@ class AgentsWindow(QMainWindow):
 
     def add_environment_to_gui(self, environment):
 
+        if self.ui.environments_tabs.findChild(QWidget, environment + self.sep + "env_tab_widget") is not None:
+            return
+
         # create tab widget for this environment
         env_tab_widget = QWidget(self.ui.environments_tabs)     # setting the parent is useful to find later the object
         env_tab_widget.setObjectName(environment + self.sep + "env_tab_widget")  # object name is useful to find later the object
@@ -121,6 +124,7 @@ class AgentsWindow(QMainWindow):
         # create widgets for the new agent
         label_name = QLabel(agent)
         #label_name.setAlignment(Qt.AlignRight)
+        spacer = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
         label_name.setSizePolicy(QSizePolicy.Maximum, QSizePolicy.Fixed)
         label_loading = QLabel(env_tab_widget)
         label_loading.setAlignment(Qt.AlignRight)
@@ -133,6 +137,7 @@ class AgentsWindow(QMainWindow):
         # add widgets to row
         row = QWidget(env_tab_widget)
         horiz_layout = QHBoxLayout(row)
+        horiz_layout.addItem(spacer)
         horiz_layout.addWidget(label_loading)
         horiz_layout.addWidget(label_name)
         horiz_layout.addWidget(btn_info)

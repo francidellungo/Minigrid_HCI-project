@@ -54,7 +54,7 @@ def print_observation(obs, flip=True):
 
 
 def get_num_actions():
-    return 7
+    return 3
 
 
 def get_all_environments():
@@ -122,9 +122,10 @@ def _load_net(arg, prefix, eval_mode=False, device='auto'):
 def nparray_to_qpixmap(img):
     return QPixmap(QImage(img, img.shape[1], img.shape[0], img.shape[1] * 3, QImage.Format_RGB888))
 
+
 def normalize(values):
     mean = np.mean(values)
-    std = np.std(values)
+    std = np.std(values) + 10 ** -7
     return [(v-mean)/std for v in values]
 
 

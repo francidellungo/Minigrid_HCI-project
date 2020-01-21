@@ -31,6 +31,7 @@ class AgentDetailWindow(QMainWindow):
         self.ui = Ui_Agent()
         self.ui.setupUi(self)
         self.setWindowTitle(agent_key)
+        self.ui.txt_name.setText(self.agent.name)
 
         # update text label and gif label of training status (completed / training)
         self.refresh_training_status()
@@ -79,8 +80,9 @@ class AgentDetailWindow(QMainWindow):
 
     def display_games(self):
         games = self.agents_model.get_agent(self.environment, self.agent_key).games
-        for game in reversed(games):
-            self.add_row(game)
+        if games is not None and len(games) > 0:
+            for game in reversed(games):
+                self.add_row(game)
 
     def add_row(self, folder_name):
         horiz = QHBoxLayout()

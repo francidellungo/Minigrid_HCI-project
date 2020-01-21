@@ -2,11 +2,13 @@
 
 # Form implementation generated from reading ui file 'agent_detail.ui'
 #
-# Created by: PyQt5 UI code generator 5.9.2
+# Created by: PyQt5 UI code generator 5.13.2
 #
 # WARNING! All changes made in this file will be lost!
 
+
 from PyQt5 import QtCore, QtGui, QtWidgets
+
 
 class Ui_Agent(object):
     def setupUi(self, Agent):
@@ -65,6 +67,23 @@ class Ui_Agent(object):
         self.labelGame.setObjectName("labelGame")
         self.horizontalLayout_4.addWidget(self.labelGame)
         self.verticalLayout.addLayout(self.horizontalLayout_4)
+        self.formWidget = QtWidgets.QWidget(self.centralwidget)
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Maximum)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.formWidget.sizePolicy().hasHeightForWidth())
+        self.formWidget.setSizePolicy(sizePolicy)
+        self.formWidget.setObjectName("formWidget")
+        self.formLayout = QtWidgets.QFormLayout(self.formWidget)
+        self.formLayout.setObjectName("formLayout")
+        self.label = QtWidgets.QLabel(self.formWidget)
+        self.label.setObjectName("label")
+        self.formLayout.setWidget(0, QtWidgets.QFormLayout.LabelRole, self.label)
+        self.txt_name = QtWidgets.QLabel(self.formWidget)
+        self.txt_name.setText("")
+        self.txt_name.setObjectName("txt_name")
+        self.formLayout.setWidget(0, QtWidgets.QFormLayout.FieldRole, self.txt_name)
+        self.verticalLayout.addWidget(self.formWidget)
         self.horizontalWidget1 = QtWidgets.QWidget(self.centralwidget)
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Maximum)
         sizePolicy.setHorizontalStretch(0)
@@ -125,6 +144,6 @@ class Ui_Agent(object):
         self.labelStatus.setText(_translate("Agent", "Status: training"))
         self.labelLoading.setText(_translate("Agent", "x"))
         self.progressBarTraining.setFormat(_translate("Agent", "%v/%m"))
+        self.label.setText(_translate("Agent", "Name:"))
         self.btnDeleteAgent.setText(_translate("Agent", "Delete agent"))
         self.list_title_label.setText(_translate("Agent", "Games used for training"))
-

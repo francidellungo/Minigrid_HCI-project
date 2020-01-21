@@ -96,7 +96,10 @@ class AgentsModel(QObject):
         TrainingManager.train_new_agent(environment, games, self, lambda agent: self.add_agent(environment, agent.key, agent) or self.update_agent(environment, agent.key))
 
     def add_agent(self, environment: str, agent_key: str, agent:PolicyNet=None) -> bool:
-        if environment not in self._agents or agent_key in self._agents[environment]:
+        if environment not in self._agents:
+            self.add_environment(environment)
+
+        if agent_key in self._agents[environment]:
             return False
 
         if agent is None:
@@ -144,7 +147,7 @@ class AgentsModel(QObject):
         return self._agents[environment][agent_key]
 
     def read_agent_games(self, environment, reward_key):
-        trained_reward_info = os.path.join(self.rewards_dir, "conv_reward", environment, reward_key, "training.json")  # TODO cambiare!!!!!! -> rimuovere "conv_reward"
+        trained_reward_info = os.path.join(self.rewards_dir, environment, reward_key, "training.json")
         try:
             with open(trained_reward_info, 'rt') as file:
                 j = json.load(file)
@@ -160,8 +163,10 @@ class AgentsModel(QObject):
         # net_module = importlib.import_module(".".join(os.path.split(module_path)))
         # reward_net = net_module.get_net(get_input_shape(), get_num_actions(), environment, agent_key, folder=agent_dir).to(self.device)
         agent = pickle.load(open(os.path.join(agent_dir, "net.pkl"), "rb")).to(self.device).load_last_checkpoint()
+        agent.name = self.load_agent_value(environment, agent_key)["name"]
         return agent
 
+    # TODO change
     def load_agent_value(self, environment: str, agent_key: str):
         trained_agent_dir = os.path.join(self.agents_dir, environment, agent_key)
         trained_agent_info = os.path.join(trained_agent_dir, "training.json")
@@ -169,7 +174,10 @@ class AgentsModel(QObject):
             with open(trained_agent_info, 'rt') as file:
                 j = json.load(file)
             j["path"] = trained_agent_dir
-            j["games"] = self.read_agent_games(environment, j["reward_net_key"])
+            try:
+                j["games"] = self.read_agent_games(environment, j["reward_net_key"])
+            except KeyError:
+                j["games"] = []
             return j
         except FileNotFoundError:
             print("File not found: " + trained_agent_info)
