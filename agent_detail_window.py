@@ -85,15 +85,15 @@ class AgentDetailWindow(QMainWindow):
     def add_row(self, folder_name):
         horiz = QHBoxLayout()
         horiz.addWidget(QLabel(folder_name))
-        # pixmap = QPixmap(path_of_image + '0' + '.png')
-        pixmap = QPixmap('games/MiniGrid-Empty-6x6-v0/' + folder_name + '/game0.png')
+        # pixmap = QPixmap('games/MiniGrid-Empty-6x6-v0/' + folder_name + '/game0.png')
+        img_path = os.path.join(games_path, self.environment, folder_name, 'game0.png')
+        pixmap = QPixmap(img_path)
         # print(path_of_image + '0' + '.png')
         img_label = QLabel()
         img_label.setPixmap(pixmap)
         horiz.addWidget(img_label)
         horiz.addWidget(QPushButton('info'))
         timer = QTimer()
-
         dir_path = os.path.join(games_path, self.environment, folder_name)
 
         img_label.enterEvent = lambda ev: self.show_traj_imgs(dir_path, img_label, timer)
@@ -112,7 +112,6 @@ class AgentDetailWindow(QMainWindow):
         # show images in loop with only one timer.
         timer.timeout.connect(lambda: self.on_timeout(os.path.join(games_dir, next(imgs_cycle)), img_label))
         timer.start(250)
-
 
     def stop_show_traj(self, games_dir, img_label, timer):
         timer.stop()
