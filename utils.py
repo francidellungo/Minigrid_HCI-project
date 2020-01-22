@@ -41,13 +41,27 @@ def state_filter(obs, device='auto'):
     if device == 'auto':
         device = auto_device()
 
-    return torch.from_numpy(obs['image']).float().permute(2, 0, 1).to(device)
+    obs_image = obs['image'].astype(float)
+    #obs_image[obs_image == 6] = -1
+    return torch.from_numpy(obs_image).float().permute(2, 0, 1).to(device)
 
 
 def print_observation(obs, flip=True):
     colors = ["red", "green", "blue"]
     for i, color in enumerate(colors):
         obs_channel_i = obs['image'][:, :, i]
+        if flip:
+            obs_channel_i = np.flip(obs_channel_i, axis=1)
+        #obs_channel_i = obs_channel_i.astype(float)
+        #obs_channel_i[obs_channel_i == 6] = -1
+        print(colored(obs_channel_i, color))
+
+
+def print_state(state, flip=True):
+    state = state.to("cpu")
+    colors = ["red", "green", "blue"]
+    for i, color in enumerate(colors):
+        obs_channel_i = state[i, ...]
         if flip:
             obs_channel_i = np.flip(obs_channel_i, axis=1)
         print(colored(obs_channel_i, color))

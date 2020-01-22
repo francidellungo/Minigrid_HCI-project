@@ -13,7 +13,7 @@ from torch.distributions.categorical import Categorical
 
 from torchsummary import summary
 
-from utils import get_input_shape, state_filter
+from utils import *
 
 
 class PolicyNet(nn.Module):
@@ -204,8 +204,10 @@ class PolicyNet(nn.Module):
                     self.env.render()
                 action = self.sample_action(state)
 
+                #print_state(state)
                 # execute action
                 state, true_reward, done, _ = self.env.step(action)
+                state = self.env.gen_obs()
 
                 state = state_filter(state, self.current_device())
 
@@ -223,6 +225,7 @@ class PolicyNet(nn.Module):
                     break
 
             discounted_rewards = PolicyNet.compute_discounted_rewards(rewards, gamma)
+            #discounted_rewards = normalize(PolicyNet.compute_discounted_rewards(rewards, gamma))
 
             return states, actions, true_rewards, rewards, discounted_rewards, step
 
@@ -234,7 +237,7 @@ class PolicyNet(nn.Module):
         with open(os.path.join(self.folder, "training.json"), "wt") as file:
             reward_type = "env" if reward is None else "net"
             with io.StringIO() as out, redirect_stdout(out):
-                summary(self, get_input_shape())
+                summary(self, get_input_shape(), device=self.current_device().type)
                 net_summary = out.getvalue()
             print(net_summary)
             name = os.path.basename(os.path.normpath(self.folder))

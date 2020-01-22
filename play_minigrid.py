@@ -122,20 +122,20 @@ class Game:
         if self.num_games_ended == self.max_games:
             return
         obs, reward, done, info = self.env.step(action)
-        self.obs = obs
+        self.obs = self.env.gen_obs()
         print_observation(self.obs)
-        self.print_step_details(reward, obs)
+        self.print_step_details(reward, self.obs)
 
         if self.games_directory is not None:
             # Save state
-            self.game_info['trajectory'].append(state_filter(obs).tolist())
+            self.game_info['trajectory'].append(state_filter(self.obs).tolist())
             self.game_info['rewards'].append(reward)
             # Save screenshots
             screenshot_file = 'game' + str(self.env.step_count) + '.png'
             pixmap = self.env.render('pixmap')
             self.screenshots.append((screenshot_file, pixmap))
 
-        self._refresh_gui(obs)
+        self._refresh_gui(self.obs)
         if done:
             print('done!')
             self.print_rewards()
