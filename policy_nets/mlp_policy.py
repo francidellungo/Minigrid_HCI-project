@@ -18,7 +18,6 @@ class MlpPolicyNet(PolicyNet):
         self.saved_log_probs = []
         self.rewards = []
 
-        weight_decay = 10 ** -4  # penalty for net weights L2 regularization TODO vedere se con weight decay è meglio o peggio
         self.optimizer = optim.Adam(self.parameters(), lr=10 ** -4)
 
     def forward(self, x):

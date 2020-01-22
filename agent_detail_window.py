@@ -162,6 +162,7 @@ class GameThread(Thread):
 
             action = self.agent.sample_action(state_filter(state))
             state, reward, done, info = self.env.step(action)
+            state = self.env.gen_obs()
 
     def interrupt(self):
         self._running = False
