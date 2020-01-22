@@ -42,7 +42,7 @@ class GamesView(QMainWindow):
         self.games_model = games_model
         self.agents_model = agents_model
         self.env = env
-        self.counts = []
+        # self.counts = []
         self.animations = []
         # self.bg_color = self.palette().color(QPalette.Background)
 
@@ -109,7 +109,7 @@ class GamesView(QMainWindow):
         horiz.addWidget(img_label)
 
         # game info button
-        horiz.addWidget(QPushButton('info'))
+        # horiz.addWidget(QPushButton('info'))
 
         # delete game button
         delete_pb = QPushButton('delete')
