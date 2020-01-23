@@ -87,7 +87,7 @@ if __name__ == "__main__":
     parser.add_argument("-e", "--env_name", help="gym environment to load", default=default_env, choices=get_all_environments())
     parser.add_argument("-p", "--policy", help="policy net to train", default=default_policy)
     parser.add_argument("-r", "--reward", help="reward network to load", default=None)
-    parser.add_argument("-me", "--max_episodes", help="max episodes to play", default=10000, type=int)
+    parser.add_argument("-me", "--max_episodes", help="max episodes to play", default=100000, type=int)
     parser.add_argument("-s", "--show", help="show the agent while training", default=False, action='store_true')
     parser.add_argument("-d", "--device", help="select device: cpu|cuda|auto", default="auto")
 

@@ -137,7 +137,15 @@ def nparray_to_qpixmap(img):
     return QPixmap(QImage(img, img.shape[1], img.shape[0], img.shape[1] * 3, QImage.Format_RGB888))
 
 
-def normalize(values):
+def normalize(values, inf=-1, sup=1):
+    assert inf < sup
+    mn = min(values)
+    mx = max(values)
+    ampl = (mx - mn + 10 ** -7)
+    return [(v-mn)/ampl * (sup-inf) + inf for v in values]
+
+
+def standardize(values):
     mean = np.mean(values)
     std = np.std(values) + 10 ** -7
     return [(v-mean)/std for v in values]

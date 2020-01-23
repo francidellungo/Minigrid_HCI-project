@@ -19,7 +19,7 @@ from utils import *
 class PolicyNet(nn.Module):
 
     @staticmethod
-    def compute_discounted_rewards(rewards, gamma=0.99):
+    def compute_discounted_rewards(rewards, gamma=0.95):
         discounted_rewards = []
         running = 0.0
         for r in reversed(rewards):
@@ -30,7 +30,7 @@ class PolicyNet(nn.Module):
     @staticmethod
     def loss(actions_logits, action, discounted_reward):
         distribution = Categorical(logits=actions_logits)
-        return (-distribution.log_prob(action) * discounted_reward).view(-1)
+        return (-distribution.log_prob(action) * discounted_reward).view(-1) - (distribution.entropy() * (10 ** -6)) # TODO questo iperparametro va messo in un altro modo
 
     @abstractmethod
     def __init__(self, input_shape, num_actions, env, key=None, folder=None, resume=True):
@@ -149,14 +149,18 @@ class PolicyNet(nn.Module):
                 running_batch_avg_length = batch_avg_length if running_batch_avg_length is None else running_batch_avg_length * 0.95 + batch_avg_length * 0.05
 
                 # print all metrics
-                print("episode: {},  batch_avg_loss: {:7.4f},  batch_avg_length: {:7.4f},  running_batch_avg_length: {:7.4f},  batch_avg_return: {:7.4f},  running_batch_avg_return: {:7.4f},  batch_avg_true_return: {:7.4f},  running_batch_avg_true_return: {:7.4f}"
-                      .format(self.episode, batch_avg_loss.item(), batch_avg_length, running_batch_avg_length, batch_avg_return, running_batch_avg_return, batch_avg_true_return, running_batch_avg_true_return))
+                print("\repisode {}, avg_loss {:6.3f}, avg_length {:6.3f} (running {:6.3f}), avg_return {:6.3f} (running {:6.3f}), avg_true_return {:6.3f} (running {:6.3f}), lr {}   "
+                      .format(self.episode, batch_avg_loss.item(), batch_avg_length, running_batch_avg_length, batch_avg_return, running_batch_avg_return, batch_avg_true_return, running_batch_avg_true_return, self.optimizer.param_groups[0]['lr']),
+                      end="")
 
                 # save all metrics for tensorboard
                 tensorboard.add_scalars("loss", {"batch_avg": batch_avg_loss.item()}, self.episode)
                 tensorboard.add_scalars("return", {"batch_avg": batch_avg_return, "running_batch_avg": running_batch_avg_return}, self.episode)
                 tensorboard.add_scalars("true_return", {"batch_avg": batch_avg_true_return, "running_batch_avg": running_batch_avg_true_return}, self.episode)
                 tensorboard.add_scalars("length", {"batch_avg": batch_avg_length, "running_batch_avg": running_batch_avg_length}, self.episode)
+
+                if hasattr(self, "scheduler"):
+                    self.scheduler.step(batch_avg_return)
 
                 # re-init all metrics
                 batch_avg_loss = torch.zeros(1).to(self.current_device())
@@ -189,7 +193,7 @@ class PolicyNet(nn.Module):
         return action
 
     ''' run an episode and return all relevant information '''
-    def run_episode(self, max_length, reward_net=None, gamma=0.99, render=False):
+    def run_episode(self, max_length, reward_net=None, gamma=0.85, render=False):
         with torch.no_grad():  # for the reward net the gradient is not required
             state = state_filter(self.env.reset(), self.current_device())
 
@@ -224,13 +228,16 @@ class PolicyNet(nn.Module):
                 if done:
                     break
 
+            #rewards = standardize(rewards)
+            #rewards = normalize(rewards)
             discounted_rewards = PolicyNet.compute_discounted_rewards(rewards, gamma)
+            #discounted_rewards = standardize(PolicyNet.compute_discounted_rewards(rewards, gamma))
             #discounted_rewards = normalize(PolicyNet.compute_discounted_rewards(rewards, gamma))
 
             return states, actions, true_rewards, rewards, discounted_rewards, step
 
     ''' save net and training details in training.json '''
-    def _save_training_details(self, reward, batch_size, reward_net_key=None):
+    def _save_training_details(self, reward, size, reward_net_key=None):
         if not os.path.exists(self.folder):
             os.makedirs(self.folder)
 
@@ -242,7 +249,13 @@ class PolicyNet(nn.Module):
             print(net_summary)
             name = os.path.basename(os.path.normpath(self.folder))
             j = {"name": name, "type": str(type(self)), "str": str(self).replace("\n", ""), "reward_type": reward_type,
-                       "batch_size": batch_size, "max_episodes": self.max_episodes, "summary": net_summary}
+                 "size": size, "max_episodes": self.max_episodes, "optimizer": str(self.optimizer),
+                 "summary": net_summary}
+
+            if hasattr(self, "scheduler"):
+                j["scheduler"] = str(self.scheduler.__class__.__name__)
+                if hasattr(self, "scheduler_kwargs"):
+                    j["scheduler_kwargs"] = self.scheduler_kwargs
 
             if reward_type == "net":
                 j["reward_net_key"] = reward_net_key
