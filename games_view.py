@@ -1,3 +1,4 @@
+import json
 import os
 import sys
 from itertools import cycle
@@ -6,14 +7,30 @@ from PyQt5 import QtGui
 
 from Ui_scrollbar_v2 import Ui_MainWindow
 
-from PyQt5.QtGui import QPixmap, QColor, QCursor, QIcon
-from PyQt5.QtWidgets import QApplication, QMainWindow, QDialog, QLabel, QPushButton, QHBoxLayout, QWidget, QMessageBox
-from PyQt5.QtCore import QTimer, pyqtSignal
+from PyQt5.QtGui import QPixmap, QColor, QCursor, QIcon, QPalette
+from PyQt5.QtWidgets import QApplication, QMainWindow, QDialog, QLabel, QPushButton, QHBoxLayout, QWidget, QMessageBox, \
+    QGraphicsColorizeEffect, QGraphicsOpacityEffect
+from PyQt5.QtCore import QTimer, pyqtSignal, QPropertyAnimation, pyqtProperty
 
 env_used = 'MiniGrid-Empty-6x6-v0'
 games_path = 'games'
 
 folder_name = '2020-01-05_15:04:54'
+
+bg_color = QColor('#efebe7')
+
+
+class MyWidget(QWidget):
+
+    def __init__(self, parent):
+        super().__init__(parent)
+
+    def _set_color(self, col):
+        palette = self.palette()
+        palette.setColor(self.backgroundRole(), col)
+        self.setPalette(palette)
+
+    color = pyqtProperty(QColor, fset=_set_color)
 
 
 class GamesView(QMainWindow):
@@ -25,7 +42,9 @@ class GamesView(QMainWindow):
         self.games_model = games_model
         self.agents_model = agents_model
         self.env = env
-        self.counts = []
+        # self.counts = []
+        self.animations = []
+        # self.bg_color = self.palette().color(QPalette.Background)
 
         self.initUI(env)
         self.setWindowTitle(env)
@@ -43,9 +62,10 @@ class GamesView(QMainWindow):
         :return:
         """
         if list_ is 'games':
-            row = QWidget(self.ui.games_verticalW)
+            row = MyWidget(self.ui.games_verticalW)
         else:
-            row = QWidget(self.ui.ranking_verticalW)
+            row = MyWidget(self.ui.ranking_verticalW)
+        row.setAutoFillBackground(True)
 
         row.setObjectName(game_key)
         horiz = QHBoxLayout(row)
@@ -57,7 +77,14 @@ class GamesView(QMainWindow):
 
         # horiz = QHBoxLayout()
         # game name
-        horiz.addWidget(QLabel(game_key))
+        game_label = QLabel(game_key)
+        game_info_path = os.path.join(games_path, self.env, game_key, 'game.json')
+        with open(game_info_path) as json_file:
+            game_info = json.load(json_file)
+
+        tooltip_msg = 'Game: ' + str(game_info['name']) + '\n# steps: ' + str(len(game_info['trajectory'])-1) + '\nScore: ' + str(game_info['score'])
+        game_label.setToolTip(tooltip_msg)
+        horiz.addWidget(game_label)
 
         # game imgs
         imgs_names = [elem for elem in os.listdir(os.path.join(games_path, env, game_key)) if elem.endswith(".png")]
@@ -69,7 +96,9 @@ class GamesView(QMainWindow):
         pixmap = QPixmap(os.path.join(games_path, env, game_key, 'game0.png'))
 
         img_label = QLabel()
+        img_label.setScaledContents(True)
         img_label.setPixmap(pixmap)
+        img_label.setFixedSize(150, 150)
 
         timer = QTimer()
 
@@ -80,7 +109,7 @@ class GamesView(QMainWindow):
         horiz.addWidget(img_label)
 
         # game info button
-        horiz.addWidget(QPushButton('info'))
+        # horiz.addWidget(QPushButton('info'))
 
         # delete game button
         delete_pb = QPushButton('delete')
@@ -130,6 +159,7 @@ class GamesView(QMainWindow):
             move_down_btn.setEnabled(True)
 
         self.check_enable_btn()
+        return row
 
     def check_enable_btn(self):
         # only 1 element in ranking list
@@ -212,7 +242,8 @@ class GamesView(QMainWindow):
     def move_game_gui(self, dest_list_name, game_name):
         self.remove_game_from_gui(game_name)
 
-        self.add_row(self.env, game_name, dest_list_name)
+        row = self.add_row(self.env, game_name, dest_list_name)
+        self.doAnim(row)
 
     def move_game_up_gui(self, game_name):
         #insertItem(index, a1)
@@ -221,13 +252,26 @@ class GamesView(QMainWindow):
         old_idx = self.ui.ranking_verticalLayout.indexOf(self.ui.ranking_verticalW.findChild(QWidget, game_name))
         # print('position: ', old_idx, 'position to insert: ', old_idx - 1)
         self.remove_game_from_gui(game_name)
-        self.add_row(self.env, game_name, list_='rank', position=old_idx - 1)
+        row = self.add_row(self.env, game_name, list_='rank', position=old_idx - 1)
+        self.doAnim(row)
 
     def move_game_down_gui(self, game_name):
         old_idx = self.ui.ranking_verticalLayout.indexOf(self.ui.ranking_verticalW.findChild(QWidget, game_name))
         # print('position: ', old_idx, 'position to insert: ', old_idx + 1)
         self.remove_game_from_gui(game_name)
-        self.add_row(self.env, game_name, list_='rank', position=old_idx + 1)
+        row = self.add_row(self.env, game_name, list_='rank', position=old_idx + 1)
+        self.doAnim(row)
+
+    def doAnim(self, row):
+        global bg_color
+        anim = QPropertyAnimation(row, b"color")
+        anim.setDuration(1000)
+        anim.setStartValue(QColor('gray'))
+        anim.setEndValue(QColor('#efebe7'))
+        anim.start()
+        self.animations.append(anim)
+        anim.finished.connect(lambda a=anim: self.animations.remove(a))
+
 
     def train_agent_slot(self):
         if self.agents_model is None:
