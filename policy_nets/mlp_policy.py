@@ -12,11 +12,9 @@ class MlpPolicyNet(PolicyNet):
     def __init__(self, input_shape, num_actions, env, key=None, folder=None):
         # TODO sistemare signature di costruttore e init
         super(MlpPolicyNet, self).__init__(input_shape, num_actions, env, key, folder)
-        self.shape_prod = np.prod(input_shape)
+        self.shape_prod = int(np.prod(input_shape))
         self.affine1 = nn.Linear(self.shape_prod, 100)
         self.affine2 = nn.Linear(100, num_actions)
-        self.saved_log_probs = []
-        self.rewards = []
 
         self.optimizer = optim.Adam(self.parameters(), lr=10 ** -4)
 

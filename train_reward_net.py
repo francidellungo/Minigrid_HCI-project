@@ -6,7 +6,7 @@ from glob import glob
 import argparse
 import torch
 
-from torchsummary import summary
+from modelsummary import summary
 
 from reward_nets.base_reward_net import RewardNet
 from utils import get_input_shape
@@ -76,8 +76,6 @@ def train_reward(env_name, reward_net_file=default_reward, games=None, callbacks
     timestamp = datetime.now().strftime("%Y-%m-%d_%H:%M:%S")
     output_dir = os.path.join(reward_net_dir, env_name, file_radix + "|" + timestamp)
     reward_net = net_module.get_net(get_input_shape(), folder=output_dir).to(device)
-    print("summary")
-    summary(reward_net, get_input_shape(), device=device)
     reward_net.fit(X_train, max_epochs=20, X_val=X_val, train_games_info=train_games_info, val_games_info=val_games_info, autosave=True, epochs_for_checkpoint=10, train_games=games, callbacks=callbacks)
 
     # evaluate after training

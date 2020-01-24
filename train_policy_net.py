@@ -21,6 +21,8 @@ default_env = "MiniGrid-Empty-6x6-v0"
 # default_policy = "policy_nets/one_hot_mlp_policy.py"
 # default_policy = "policy_nets/MiniGrid-Dynamic-Obstacles-5x5-v0/one_hot_mlp_policy|2020-01-24_11:38:33/policy_net-2999.pth"
 default_policy = "policy_nets/MiniGrid-Dynamic-Obstacles-5x5-v0/one_hot_mlp_policy|2020-01-24_11:38:33/policy_net-2999.pth"
+# default_policy = "policy_nets/emb_onehot_conv1x1_mlp_policy.py"
+
 
 def train_policy(env_name, policy_net=default_policy, reward_net_arg=None, policy_net_key=None, callbacks=[], max_episodes=10000, render=False, device=auto_device()):
 

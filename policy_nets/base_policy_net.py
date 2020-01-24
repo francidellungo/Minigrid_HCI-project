@@ -147,9 +147,10 @@ class PolicyNet(nn.Module):
                 batch_avg_true_return /= batch_size
                 batch_avg_length /= batch_size
                 # calculate running
-                running_batch_avg_return = batch_avg_return if running_batch_avg_return is None else running_batch_avg_return * 0.95 + batch_avg_return * 0.05
-                running_batch_avg_true_return = batch_avg_true_return if running_batch_avg_true_return is None else running_batch_avg_true_return * 0.95 + batch_avg_true_return * 0.05
-                running_batch_avg_length = batch_avg_length if running_batch_avg_length is None else running_batch_avg_length * 0.95 + batch_avg_length * 0.05
+                smooth_weight = 0.9
+                running_batch_avg_return = batch_avg_return if running_batch_avg_return is None else running_batch_avg_return * smooth_weight + batch_avg_return * (1-smooth_weight)
+                running_batch_avg_true_return = batch_avg_true_return if running_batch_avg_true_return is None else running_batch_avg_true_return * smooth_weight + batch_avg_true_return * (1-smooth_weight)
+                running_batch_avg_length = batch_avg_length if running_batch_avg_length is None else running_batch_avg_length * smooth_weight + batch_avg_length * (1-smooth_weight)
 
                 # print all metrics
                 print("\repisode {}, avg_loss {:6.3f}, avg_length {:6.3f} (running {:6.3f}), avg_return {:6.3f} (running {:6.3f}), avg_true_return {:6.3f} (running {:6.3f}), lr {}   "
