@@ -11,7 +11,7 @@ import torch.nn as nn
 from tensorboardX import SummaryWriter
 from torch.distributions.categorical import Categorical
 
-from torchsummary import summary
+from modelsummary import summary
 
 from utils import *
 
@@ -57,7 +57,7 @@ class PolicyNet(nn.Module):
     def current_device(self):
         return next(self.parameters()).device
 
-    def fit(self, episodes=100, batch_size=16, reward_loader=lambda:..., render=False, autosave=False, episodes_for_checkpoint=None, reward_net_key=None, reward_net_games=None,callbacks=[]):
+    def fit(self, episodes=100, batch_size=32, reward_loader=lambda:..., render=False, autosave=False, episodes_for_checkpoint=None, reward_net_key=None, reward_net_games=None,callbacks=[]):
         self.max_episodes = self.episode + episodes
 
         # TODO vedere se c'è verso prenderli dalla reward net invece che come parametro
@@ -103,7 +103,7 @@ class PolicyNet(nn.Module):
             episode_loss = torch.zeros(1).to(self.current_device())
             while True:
                 ''' run an episode '''
-                states, actions, true_rewards, rewards, discounted_rewards, length = self.run_episode(max_length=100, reward_net=reward, render=render)
+                states, actions, true_rewards, rewards, discounted_rewards, length = self.run_episode(max_length=self.env.max_steps, reward_net=reward, render=render)
 
                 gradient_not_zero = False
 
@@ -243,14 +243,15 @@ class PolicyNet(nn.Module):
 
         with open(os.path.join(self.folder, "training.json"), "wt") as file:
             reward_type = "env" if reward is None else "net"
-            # with io.StringIO() as out, redirect_stdout(out):
-            #     summary(self, get_input_shape(), device=self.current_device().type)
-            #     net_summary = out.getvalue()
-            # print(net_summary)
+            with io.StringIO() as out, redirect_stdout(out):
+                summary(self, torch.zeros(get_input_shape()).to(self.current_device()), show_input=True)
+                summary(self, torch.zeros(get_input_shape()).to(self.current_device()), show_input=False)
+                net_summary = out.getvalue()
+            print(net_summary)
             name = os.path.basename(os.path.normpath(self.folder))
             j = {"name": name, "type": str(type(self)), "str": str(self).replace("\n", ""), "reward_type": reward_type,
                  "size": size, "max_episodes": self.max_episodes, "optimizer": str(self.optimizer),
-                 }#"summary": net_summary}
+                 "summary": net_summary}
 
             if hasattr(self, "scheduler"):
                 j["scheduler"] = str(self.scheduler.__class__.__name__)
