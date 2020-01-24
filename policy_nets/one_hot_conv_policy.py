@@ -7,7 +7,6 @@ from policy_nets.base_policy_net import PolicyNet
 from utils import conv_output_size, get_num_channels
 
 
-
 class ConvPolicyNet(PolicyNet):
 
     def __init__(self, input_shape, num_actions, env, key=None, folder=None):
@@ -25,7 +24,8 @@ class ConvPolicyNet(PolicyNet):
     def forward(self, x):
         x = x.view(-1, *self.input_shape)
         batch_size = len(x)
-        one_hot_x = F.one_hot(x.long(), self.n).view(batch_size, -1, *self.input_shape[1:]).float()  # size=(4,7,n)
+        one_hot_x = F.one_hot(x.long(), self.n).view(batch_size, -1, *self.input_shape[1:]).float()
+        # print(one_hot_x)
 
         # one_hot_x = one_hot_x.view(-1, *self.input_shape)
         y = self.conv(one_hot_x)

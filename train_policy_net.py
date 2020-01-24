@@ -17,8 +17,8 @@ from reward_nets.base_reward_net import RewardNet
 from utils import get_all_environments, get_num_actions, get_input_shape, auto_device, load_reward
 
 default_env = "MiniGrid-Empty-6x6-v0"
-default_policy = "policy_nets/conv_policy.py"
-
+# default_policy = "policy_nets/conv_policy.py"
+default_policy = "policy_nets/one_hot_mlp_policy.py"
 
 def train_policy(env_name, policy_net=default_policy, reward_net_arg=None, policy_net_key=None, callbacks=[], max_episodes=10000, render=False, device=auto_device()):
 

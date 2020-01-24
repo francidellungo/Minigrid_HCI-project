@@ -243,14 +243,14 @@ class PolicyNet(nn.Module):
 
         with open(os.path.join(self.folder, "training.json"), "wt") as file:
             reward_type = "env" if reward is None else "net"
-            with io.StringIO() as out, redirect_stdout(out):
-                summary(self, get_input_shape(), device=self.current_device().type)
-                net_summary = out.getvalue()
-            print(net_summary)
+            # with io.StringIO() as out, redirect_stdout(out):
+            #     summary(self, get_input_shape(), device=self.current_device().type)
+            #     net_summary = out.getvalue()
+            # print(net_summary)
             name = os.path.basename(os.path.normpath(self.folder))
             j = {"name": name, "type": str(type(self)), "str": str(self).replace("\n", ""), "reward_type": reward_type,
                  "size": size, "max_episodes": self.max_episodes, "optimizer": str(self.optimizer),
-                 "summary": net_summary}
+                 }#"summary": net_summary}
 
             if hasattr(self, "scheduler"):
                 j["scheduler"] = str(self.scheduler.__class__.__name__)

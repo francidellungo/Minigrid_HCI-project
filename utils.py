@@ -62,8 +62,8 @@ def print_state(state, flip=True):
     colors = ["red", "green", "blue"]
     for i, color in enumerate(colors):
         obs_channel_i = state[i, ...]
-        if flip:
-            obs_channel_i = np.flip(obs_channel_i, axis=1)
+        # if flip:
+        #     obs_channel_i = np.flip(obs_channel_i, axis=1)
         print(colored(obs_channel_i, color))
 
 
