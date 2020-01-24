@@ -44,7 +44,7 @@ class GamesView(QMainWindow):
         self.env = env
         # self.counts = []
         self.animations = []
-        # self.bg_color = self.palette().color(QPalette.Background)
+        self.bg_color = self.palette().color(QPalette.Background)
 
         self.initUI(env)
         self.setWindowTitle(env)

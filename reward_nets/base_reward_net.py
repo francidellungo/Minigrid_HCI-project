@@ -88,7 +88,7 @@ class RewardNet(nn.Module):
     def forward(self, x):
         pass
 
-    def fit(self, X_train, max_epochs=1000, batch_size=16, num_subtrajectories=7, subtrajectory_length=3, X_val=None, use_also_complete_trajectories=True, train_games_info=None, val_games_info=None, autosave=False, epochs_for_checkpoint=None, train_games=None, callbacks=[]):
+    def fit(self, X_train, starting_epoch=0, max_epochs=1000, batch_size=16, num_subtrajectories=7, subtrajectory_length=3, X_val=None, use_also_complete_trajectories=True, train_games_info=None, val_games_info=None, autosave=False, epochs_for_checkpoint=None, train_games=None, callbacks=[]):
 
         self.train_games = train_games
 

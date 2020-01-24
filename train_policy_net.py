@@ -14,11 +14,13 @@ import gym_minigrid
 import torch
 
 from reward_nets.base_reward_net import RewardNet
-from utils import get_all_environments, get_num_actions, get_input_shape, auto_device, load_reward
+from utils import get_all_environments, get_num_actions, get_input_shape, auto_device, load_reward, load_policy
 
 default_env = "MiniGrid-Empty-6x6-v0"
 # default_policy = "policy_nets/conv_policy.py"
-default_policy = "policy_nets/one_hot_mlp_policy.py"
+# default_policy = "policy_nets/one_hot_mlp_policy.py"
+# default_policy = "policy_nets/MiniGrid-Dynamic-Obstacles-5x5-v0/one_hot_mlp_policy|2020-01-24_11:38:33/policy_net-2999.pth"
+default_policy = "policy_nets/MiniGrid-Dynamic-Obstacles-5x5-v0/one_hot_mlp_policy|2020-01-24_11:38:33/policy_net-2999.pth"
 
 def train_policy(env_name, policy_net=default_policy, reward_net_arg=None, policy_net_key=None, callbacks=[], max_episodes=10000, render=False, device=auto_device()):
 
@@ -37,19 +39,24 @@ def train_policy(env_name, policy_net=default_policy, reward_net_arg=None, polic
         torch.backends.cudnn.deterministic = True
         torch.backends.cudnn.benchmark = False
 
-    module_path, _ = policy_net.rsplit(".", 1)
-    file_radix = os.path.basename(os.path.normpath(module_path))
-    net_module = importlib.import_module(".".join(module_path.split(os.sep)))
+    if policy_net.endswith('.py'):
+        module_path, _ = policy_net.rsplit(".", 1)
+        file_radix = os.path.basename(os.path.normpath(module_path))
+        net_module = importlib.import_module(".".join(module_path.split(os.sep)))
 
-    policy_net_dir = module_path.rsplit("/", 1)[0] if "/" in module_path else ""  # TODO linux only
-    if policy_net_key is None:
-        policy_net_key = file_radix + "|" + datetime.now().strftime("%Y-%m-%d_%H:%M:%S")
-    output_dir = os.path.join(policy_net_dir, env_name, policy_net_key)
-    os.makedirs(output_dir)
-    with open(os.path.join(output_dir, "args.json"), "wt") as file:
-        json.dump(args_log, file)
+        policy_net_dir = module_path.rsplit("/", 1)[0] if "/" in module_path else ""  # TODO linux only
+        if policy_net_key is None:
+            policy_net_key = file_radix + "|" + datetime.now().strftime("%Y-%m-%d_%H:%M:%S")
+        output_dir = os.path.join(policy_net_dir, env_name, policy_net_key)
+        os.makedirs(output_dir)
+        with open(os.path.join(output_dir, "args.json"), "wt") as file:
+            json.dump(args_log, file)
 
-    policy_net = net_module.get_net(get_input_shape(), get_num_actions(), env, policy_net_key, folder=output_dir).to(device)
+        policy_net = net_module.get_net(get_input_shape(), get_num_actions(), env, policy_net_key, folder=output_dir).to(device)
+    else:
+        policy_net = load_policy(policy_net, device=device)
+        # starting_epoch =
+
     policy_net.fit(episodes=max_episodes, reward_loader=lambda: load_reward(reward_net_arg, True, device), autosave=True,
                    episodes_for_checkpoint=250, reward_net_key=get_reward_key(reward_net_arg),
                    reward_net_games=get_reward_games(reward_net_arg), callbacks=callbacks, render=render)
@@ -90,6 +97,8 @@ if __name__ == "__main__":
     parser.add_argument("-me", "--max_episodes", help="max episodes to play", default=100000, type=int)
     parser.add_argument("-s", "--show", help="show the agent while training", default=False, action='store_true')
     parser.add_argument("-d", "--device", help="select device: cpu|cuda|auto", default="auto")
+
+
 
     argcomplete.autocomplete(parser)
     args = parser.parse_args()
