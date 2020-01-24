@@ -165,7 +165,6 @@ class AgentsModel(QObject):
         # net_module = importlib.import_module(".".join(os.path.split(module_path)))
         # reward_net = net_module.get_net(get_input_shape(), get_num_actions(), environment, agent_key, folder=agent_dir).to(self.device)
         agent = pickle.load(open(os.path.join(agent_dir, "net.pkl"), "rb")).to(self.device).load_last_checkpoint()
-        agent.name = self.load_agent_value(environment, agent_key)["name"]
         return agent
 
     # TODO change

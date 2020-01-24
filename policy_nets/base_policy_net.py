@@ -30,10 +30,11 @@ class PolicyNet(nn.Module):
     @staticmethod
     def loss(actions_logits, action, discounted_reward):
         distribution = Categorical(logits=actions_logits)
-        return (-distribution.log_prob(action) * discounted_reward).view(-1) - (distribution.entropy() * (10 ** -6)) # TODO questo iperparametro va messo in un altro modo
+        return (-distribution.log_prob(action) * discounted_reward).view(-1)
+        # - (distribution.entropy() * (10 ** -6))  TODO questo iperparametro va messo in un altro modo
 
     @abstractmethod
-    def __init__(self, input_shape, num_actions, env, key=None, folder=None, resume=True):
+    def __init__(self, input_shape, num_actions, env, key=None, folder=None, episode_to_load=None):
         super(PolicyNet, self).__init__()
         self.input_shape = input_shape
         self.num_actions = num_actions
@@ -48,8 +49,9 @@ class PolicyNet(nn.Module):
             folder = os.path.curdir
         self.folder = folder
 
-        if resume:
-            self.load_last_checkpoint()
+        if episode_to_load is not None:
+            self.load_checkpoint(episode_to_load)
+            # self.load_last_checkpoint()
 
     @abstractmethod
     def forward(self, x):
@@ -250,6 +252,7 @@ class PolicyNet(nn.Module):
                 summary(self, torch.zeros(get_input_shape()).to(self.current_device()), show_input=False)
                 net_summary = out.getvalue()
             print(net_summary)
+            # self.name = os.path.basename(os.path.normpath(self.folder))
             j = {"name": self.name, "type": str(type(self)), "str": str(self).replace("\n", ""), "reward_type": reward_type,
                  "size": size, "max_episodes": self.max_episodes, "optimizer": str(self.optimizer),
                  "summary": net_summary}
@@ -279,10 +282,8 @@ class PolicyNet(nn.Module):
         torch.save(self.state_dict(), checkpoints_file)
         return self
 
-    def load_last_checkpoint(self):
-        # load the most recent weights from the folder of this policy
-        episode_to_load_weights = self._get_last_saved_policy_episode()
-
+    def load_checkpoint(self, episode_to_load_weights):
+        # episode_to_load_weights = number of the episode
         if episode_to_load_weights is not None:
             self.load_state_dict(
                 torch.load(os.path.join(self.folder, "policy_net-" + str(episode_to_load_weights) + ".pth"),
@@ -292,8 +293,12 @@ class PolicyNet(nn.Module):
             self.max_episodes = self._get_last_training_max_episodes()
         else:
             print("Error: cannot find saved weights")
-
         return self
+
+    def load_last_checkpoint(self):
+        # load the most recent weights from the folder of this policy
+        episode_to_load_weights = self._get_last_saved_policy_episode()
+        return self.load_checkpoint(episode_to_load_weights)
 
     def _get_last_saved_policy_episode(self):
         epochs_saved_weights = [int(state.rsplit("-", 1)[1].split(".", 1)[0]) for state in glob(os.path.join(self.folder, "policy_net-*.pth"))]

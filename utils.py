@@ -123,19 +123,23 @@ def _load_net(arg, prefix, eval_mode=False, device='auto'):
     if device == 'auto':
         device = auto_device()
 
+    print('arg: ', arg)
+
+    # TODO: fix here !
     if arg.endswith(".pth"):
         # select specified weights
-        checkpoint_to_load_weights = arg.rsplit("-", 1)[1].split(".", 1)[0]
+        checkpoint_to_load_weights = int(arg.rsplit("-", 1)[1].split(".", 1)[0])
         net_dir = os.path.dirname(arg)
+        net = pickle.load(open(os.path.join(net_dir, "net.pkl"), "rb")).to(device)
+        net.load_checkpoint(checkpoint_to_load_weights)
 
     else:
         # load the most recent weights from the specified folder
-        checkpoints_saved_weights = [int(state.rsplit("-", 1)[1].split(".", 1)[0]) for state in glob(os.path.join(arg, prefix + "*.pth"))]
-        checkpoint_to_load_weights = max(checkpoints_saved_weights)
         net_dir = arg
+        # net_dir = os.path.dirname(arg)
+        net = pickle.load(open(os.path.join(net_dir, "net.pkl"), "rb")).to(device)
+        net.load_last_checkpoint()
 
-    net = pickle.load(open(os.path.join(net_dir, "net.pkl"), "rb")).to(device)
-    net.load_state_dict(torch.load(os.path.join(net_dir, prefix + str(checkpoint_to_load_weights) + ".pth"), map_location=device))
     if eval_mode:
         net.eval()
     return net
