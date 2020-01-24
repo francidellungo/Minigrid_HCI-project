@@ -74,7 +74,7 @@ def train_reward(env_name, reward_net_file=default_reward, games=None, callbacks
     net_module = importlib.import_module(".".join(module_path.split(os.sep)))
     reward_net_dir = module_path.rsplit("/", 1)[0] if "/" in module_path else ""  # TODO linux only
     timestamp = datetime.now().strftime("%Y-%m-%d_%H:%M:%S")
-    output_dir = os.path.join(reward_net_dir, env_name, file_radix + "|" + timestamp)
+    output_dir = os.path.join(reward_net_dir, env_name, file_radix + "^" + timestamp)
     reward_net = net_module.get_net(get_input_shape(), folder=output_dir).to(device)
     reward_net.fit(X_train, max_epochs=20, X_val=X_val, train_games_info=train_games_info, val_games_info=val_games_info, autosave=True, epochs_for_checkpoint=10, train_games=games, callbacks=callbacks)
 

@@ -12,7 +12,7 @@ from policy_nets.base_policy_net import PolicyNet
 from train_policy_net import train_policy
 from train_reward_net import train_reward
 from trainer import TrainingManager
-from utils import get_input_shape, get_num_actions
+from utils import *
 
 
 class AgentsModel(QObject):
@@ -27,9 +27,10 @@ class AgentsModel(QObject):
     def __init__(self):
         super().__init__(parent=None)
         self._agents = {}
-        self.agents_dir = "policy_nets"
-        self.rewards_dir = "reward_nets"
-        self.device = "cuda" if torch.cuda.is_available() else "cpu"
+        self.agents_dir = policies_dir()
+        self.rewards_dir = rewards_dir()
+        self.games_dir = games_dir()
+        self.device = auto_device()
         self.load_from_disk()
 
     def load_from_disk(self):
@@ -37,7 +38,7 @@ class AgentsModel(QObject):
         agents_loaded = 0
         envs_loaded = 0
 
-        # for each environment
+        # for each environment in agents_dir
         for env in os.listdir(self.agents_dir):
             env_dir = os.path.join(self.agents_dir, env)
             if not os.path.isdir(env_dir) or env == "__pycache__":
@@ -56,18 +57,19 @@ class AgentsModel(QObject):
 
                 trained_policy_info = os.path.join(trained_policy_dir, "training.json")
                 try:
-                    # with open(trained_policy_info, 'rt') as file:
-                    #     j = json.load(file)
-                    # j["path"] = trained_policy_dir
-                    # if "reward_type" not in j or j["reward_type"] == "env" or "reward_net_key" not in j: # TODO rimuovere la prima parte dell'if
-                    #     continue
-                    # j["games"] = self.read_agent_games(env, j["reward_net_key"])
                     self.add_agent(env, trained_policy)
                     agents_loaded += 1
                 except FileNotFoundError:
                     print("File not found: " + trained_policy_info)
 
         print("loaded {} agents from {} environments".format(agents_loaded, envs_loaded))
+
+        # for each environment in games_dir
+        for env in os.listdir(self.games_dir):
+            env_dir = os.path.join(self.games_dir, env)
+            if not os.path.isdir(env_dir):
+                continue
+            self.add_environment(env)
 
     def add_environment(self, environment: str) -> bool:
         if environment in self._agents:

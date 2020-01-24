@@ -8,6 +8,14 @@ from termcolor import colored
 import numpy as np
 
 
+def policies_dir():
+    return "policy_nets"
+
+
+def rewards_dir():
+    return "reward_nets"
+
+
 def games_dir():
     return "games"
 

@@ -58,10 +58,10 @@ class AgentsWindow(QMainWindow):
         self.btn_add_env.clicked.connect(self.ask_for_new_environment)
         self.ui.environments_tabs.setCornerWidget(self.btn_add_env, Qt.TopRightCorner)
 
-    def update_gui_from_model(self): # TODO rivedere
+    def update_gui_from_model(self):
         agents_envs = self._agents_model.get_environments()
         for env in get_all_environments():
-            if env not in agents_envs and len(GamesModel(env, self._agents_model).games_list) == 0:
+            if env not in agents_envs:
                 continue
 
             self.add_environment_to_gui(env)
@@ -70,10 +70,10 @@ class AgentsWindow(QMainWindow):
                 self.add_agent_to_gui(env, agent_key)
 
     def ask_for_new_environment(self):
-        items = get_all_environments()
+        items = get_all_environments() - self._agents_model.get_environments()
         env, ok = QInputDialog.getItem(self, "Select an environment to add", "Environment:", items, editable=False)
         if ok:
-            self.add_environment_to_gui(env)
+            self._agents_model.add_environment(env)
 
     def add_environment_to_gui(self, environment):
 
