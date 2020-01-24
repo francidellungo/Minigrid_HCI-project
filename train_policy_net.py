@@ -13,15 +13,10 @@ import gym
 import gym_minigrid
 import torch
 
-from reward_nets.base_reward_net import RewardNet
-from utils import get_all_environments, get_num_actions, get_input_shape, auto_device, load_reward, load_policy
+from utils import *
 
 default_env = "MiniGrid-Empty-6x6-v0"
-# default_policy = "policy_nets/conv_policy.py"
-# default_policy = "policy_nets/one_hot_mlp_policy.py"
-# default_policy = "policy_nets/MiniGrid-Dynamic-Obstacles-5x5-v0/one_hot_mlp_policy|2020-01-24_11:38:33/policy_net-2999.pth"
-default_policy = "policy_nets/MiniGrid-Dynamic-Obstacles-5x5-v0/one_hot_mlp_policy|2020-01-24_11:38:33/policy_net-2999.pth"
-# default_policy = "policy_nets/emb_onehot_conv1x1_mlp_policy.py"
+default_policy = "policy_nets/emb_onehot_conv1x1_mlp_policy.py"
 
 
 def train_policy(env_name, policy_net=default_policy, reward_net_arg=None, policy_net_key=None, callbacks=[], max_episodes=10000, render=False, device=auto_device()):
@@ -56,10 +51,9 @@ def train_policy(env_name, policy_net=default_policy, reward_net_arg=None, polic
 
         policy_net = net_module.get_net(get_input_shape(), get_num_actions(), env, policy_net_key, folder=output_dir).to(device)
     else:
-        policy_net = load_policy(policy_net, device=device)
-        # starting_epoch =
+        policy_net = load_net(policy_net, device=device)
 
-    policy_net.fit(episodes=max_episodes, reward_loader=lambda: load_reward(reward_net_arg, True, device), autosave=True,
+    policy_net.fit(episodes=max_episodes, reward_loader=lambda: load_net(reward_net_arg, True, device), autosave=True,
                    episodes_for_checkpoint=250, reward_net_key=get_reward_key(reward_net_arg),
                    reward_net_games=get_reward_games(reward_net_arg), callbacks=callbacks, render=render)
 

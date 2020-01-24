@@ -91,8 +91,6 @@ class GamesView(QMainWindow):
         imgs_names.sort()
         dir_path = os.path.join(games_path, env, game_key)
 
-        print("adding row for game {}, num_states: {}".format(game_key, len(self.get_imgs_nums(dir_path))))
-
         pixmap = QPixmap(os.path.join(games_path, env, game_key, 'game0.png'))
 
         img_label = QLabel()

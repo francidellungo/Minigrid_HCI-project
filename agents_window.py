@@ -1,19 +1,17 @@
 import os
 import sys
 
-from PyQt5 import QtWidgets
+from PyQt5 import QtWidgets, QtGui
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QMovie
-# from PyQt5.QtWidgets import QMainWindow, QApplication, QHBoxLayout, QPushButton, QLabel, QSizePolicy, QWidget, \
-#     QGridLayout, QScrollArea, QVBoxLayout, QTabBar, QSpacerItem, QMessageBox
 
 from PyQt5.QtWidgets import *
 
 from agent_detail_window import AgentDetailWindow
 from agents_model import AgentsModel
 from agents_ui import Ui_Agents
-from games_model import GamesModel
 from games_window import GamesController
+from trainer import TrainingManager
 from utils import get_all_environments
 
 
@@ -205,8 +203,16 @@ class AgentsWindow(QMainWindow):
         GamesController(environment, self, self._agents_model)
         self.ui.btn_create.setEnabled(False)
 
+    def closeEvent(self, a0: QtGui.QCloseEvent) -> None:
+        super().closeEvent(a0)
 
-    # TODO stop threads in TrainingManager on exit?
+        button_reply = QMessageBox.question(self, 'Confirm exit', "Are you sure you want to close the application?",
+                                            QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
+        if button_reply == QMessageBox.Yes:
+            TrainingManager.interrupt_all_trainings()
+        else:
+            a0.ignore()
+
 
 if __name__== "__main__":
     app = QApplication(sys.argv)

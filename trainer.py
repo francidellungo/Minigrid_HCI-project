@@ -19,12 +19,10 @@ class TrainingManager:
         TrainingManager.threads.append(th)
         th.start()
 
-
-    # TODO implement
-    # @staticmethod
-    # def stop_all_trainings():
-    #     for thread in TrainingManager.threads:
-    #         thread.
+    @staticmethod
+    def interrupt_all_trainings():
+        for thread in TrainingManager.threads:
+            thread.interrupt()
 
 
 class TrainerThread(Thread):
@@ -36,13 +34,19 @@ class TrainerThread(Thread):
         self.policy_callbacks = policy_callbacks
         self.reward_train_ended_lock = Semaphore(0)
         self.policy_callbacks.append({"on_train_begin": lambda agent: self.reward_train_ended_lock.acquire()})
+        self.running = True
+        self.policy_callbacks.append({"on_episode_end": lambda agent: self.running or agent.interrupt()})
+        self.reward_trainer = RewardTrainerThread(self.environment, self.games, self.reward_train_ended_lock)
 
     def run(self):
-        reward_trainer = RewardTrainerThread(self.environment, self.games, self.reward_train_ended_lock)
-        reward_trainer.start()
-        reward_net_path = reward_trainer.get_reward_net_folder()
+        self.reward_trainer.start()
+        reward_net_path = self.reward_trainer.get_reward_net_folder()
         policy_net_key = datetime.now().strftime("%Y-%m-%d_%H:%M:%S")
         train_policy(self.environment, reward_net_arg=reward_net_path, policy_net_key=policy_net_key, callbacks=self.policy_callbacks)
+
+    def interrupt(self):
+        self.running = False
+        self.reward_trainer.interrupt()
 
 
 class RewardTrainerThread(Thread):
@@ -53,7 +57,9 @@ class RewardTrainerThread(Thread):
         self.games = games
         self.folder_lock = Semaphore(0)
         self.reward_folder = None
-        self.callbacks = [{"on_train_begin": lambda reward_net: self.set_reward_net_folder(reward_net.folder)}]
+        self.running = True
+        self.callbacks = [{"on_train_begin": lambda reward_net: self.set_reward_net_folder(reward_net.folder),
+                           "on_epoch_end": lambda reward_net: self.running or reward_net.interrupt()}]
         self.reward_train_ended_lock = reward_train_ended_lock
         if reward_train_ended_lock is not None:
             self.callbacks.append({"on_train_end": lambda reward_net: self.reward_train_ended_lock.release()})
@@ -68,3 +74,6 @@ class RewardTrainerThread(Thread):
     def get_reward_net_folder(self):
         self.folder_lock.acquire()
         return self.reward_folder
+
+    def interrupt(self):
+        self.running = False

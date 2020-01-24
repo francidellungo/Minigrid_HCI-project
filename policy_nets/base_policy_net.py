@@ -30,8 +30,7 @@ class PolicyNet(nn.Module):
     @staticmethod
     def loss(actions_logits, action, discounted_reward):
         distribution = Categorical(logits=actions_logits)
-        return (-distribution.log_prob(action) * discounted_reward).view(-1)
-        # - (distribution.entropy() * (10 ** -6))  TODO questo iperparametro va messo in un altro modo
+        return (-distribution.log_prob(action) * discounted_reward).view(-1)# - (distribution.entropy() * (10 ** -6))  # TODO questo iperparametro va messo in un altro modo
 
     @abstractmethod
     def __init__(self, input_shape, num_actions, env, key=None, folder=None, episode_to_load=None):
@@ -48,10 +47,10 @@ class PolicyNet(nn.Module):
         if folder is None:
             folder = os.path.curdir
         self.folder = folder
+        self.running = False
 
         if episode_to_load is not None:
             self.load_checkpoint(episode_to_load)
-            # self.load_last_checkpoint()
 
     @abstractmethod
     def forward(self, x):
@@ -99,8 +98,8 @@ class PolicyNet(nn.Module):
         # clear all gradients
         self.optimizer.zero_grad()
 
-
         ''' begin training '''
+        self.running = True
         for self.episode in range(self.episode, self.max_episodes):
 
             episode_loss = torch.zeros(1).to(self.current_device())
@@ -181,6 +180,11 @@ class PolicyNet(nn.Module):
             for callback in callbacks:
                 if "on_episode_end" in callback:
                     callback["on_episode_end"](self)
+
+            if not self.running:
+                break
+
+        self.running = False
 
         ''' training ended '''
         tensorboard.close()
@@ -301,12 +305,15 @@ class PolicyNet(nn.Module):
         return self.load_checkpoint(episode_to_load_weights)
 
     def _get_last_saved_policy_episode(self):
-        epochs_saved_weights = [int(state.rsplit("-", 1)[1].split(".", 1)[0]) for state in glob(os.path.join(self.folder, "policy_net-*.pth"))]
-        if len(epochs_saved_weights) > 0:
-            return max(epochs_saved_weights)
+        episodes_saved_weights = [int(state.rsplit("-", 1)[1].split(".", 1)[0]) for state in glob(os.path.join(self.folder, "policy_net-*.pth"))]
+        if len(episodes_saved_weights) > 0:
+            return max(episodes_saved_weights)
         return None
 
     def _get_last_training_max_episodes(self):
         with open(os.path.join(self.folder, "training.json"), "rt") as file:
             j = json.load(file)
         return j["max_episodes"]
+
+    def interrupt(self):
+        self.running = False

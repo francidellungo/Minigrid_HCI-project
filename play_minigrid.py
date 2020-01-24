@@ -300,8 +300,8 @@ if __name__ == "__main__":
         env = RGBImgPartialObsWrapper(env)
         env = ImgObsWrapper(env)
 
-    policy_net = load_policy(args.policy_net, True)
-    reward_net = load_reward(args.reward_net, True)
+    policy_net = load_net(args.policy_net, True)
+    reward_net = load_net(args.reward_net, True)
 
     if args.backend == "qt":
         app = QApplication(sys.argv)

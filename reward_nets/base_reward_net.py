@@ -5,6 +5,8 @@ import os
 import pickle
 from abc import abstractmethod
 from contextlib import redirect_stdout
+from glob import glob
+
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -78,11 +80,19 @@ class RewardNet(nn.Module):
 
 
     @abstractmethod
-    def __init__(self, input_shape, lr=1e-4, folder=None):  # TODO clean unused arguments
+    def __init__(self, input_shape, lr=1e-4, folder=None, epoch_to_load=None):  # TODO clean unused arguments
         super(RewardNet, self).__init__()
         self.train_games = None
+        if folder is None:
+            folder = os.path.curdir
         self.folder = folder
         self.key = os.path.basename(os.path.normpath(folder))
+        self.epoch = 0
+        self.max_epochs = 0
+        self.running = False
+
+        if epoch_to_load is not None:
+            self.load_checkpoint(epoch_to_load)
 
     @abstractmethod
     def forward(self, x, step=0):
@@ -121,6 +131,7 @@ class RewardNet(nn.Module):
                 callback["on_train_begin"](self)
 
         ''' begin training '''
+        self.running = True
         for epoch in range(max_epochs):
 
             ''' forward pass on the whole training set '''
@@ -228,7 +239,7 @@ class RewardNet(nn.Module):
             # print metrics
             print(epoch_summary)
 
-            # check if I have to save the net weights in this episode
+            # check if I have to save the net weights in this epoch
             if autosave:
                 if (epochs_for_checkpoint is not None and epoch % epochs_for_checkpoint == epochs_for_checkpoint - 1) or epoch == max_epochs-1:
                     # save net weights
@@ -237,6 +248,11 @@ class RewardNet(nn.Module):
             for callback in callbacks:
                 if "on_epoch_end" in callback:
                     callback["on_epoch_end"](self)
+
+            if not self.running:
+                break
+
+        self.running = False
 
         ''' training ended '''
         tensorboard.close()
@@ -317,10 +333,17 @@ class RewardNet(nn.Module):
             j = {"type": str(type(self)), "str": str(self).replace("\n", ""), "optimizer": str(self.optimizer),
                  "penalty_rewards": self.lambda_abs_rewards, "batch_size": batch_size,
                  "num_subtrajectories": num_subtrajectories, "subtrajectory_length": subtrajectory_length,
-                 "use_also_complete_trajectories": use_also_complete_trajectories, "summary": net_summary}
+                 "use_also_complete_trajectories": use_also_complete_trajectories, "summary": net_summary,
+                 "max_epochs": self.max_epochs}
             if train_games is not None:
                 j["games"] = train_games
             json.dump(j, file, indent=True)
+
+    def save_network(self):
+        # torch.save(self, os.path.join(self.folder, "net.pth"))
+        with open(os.path.join(self.folder, "net.pkl"), "wb") as file:
+            pickle.dump(self, file)
+        return self
 
     ''' save net weights (remark: only weights are saved here, not the network structure!) '''
     def save_checkpoint(self, epoch):
@@ -328,3 +351,36 @@ class RewardNet(nn.Module):
             os.makedirs(self.folder)
         checkpoint_file = os.path.join(self.folder, "reward_net-" + str(epoch) + ".pth")
         torch.save(self.state_dict(), checkpoint_file)
+
+    def load_checkpoint(self, epoch_to_load_weights):
+        # epoch_to_load_weights = number of the epoch
+        if epoch_to_load_weights is not None:
+            self.load_state_dict(
+                torch.load(os.path.join(self.folder, "reward_net-" + str(epoch_to_load_weights) + ".pth"),
+                           map_location=self.current_device()))
+
+            self.epoch = epoch_to_load_weights
+            self.max_epochs = self._get_last_training_max_epochs()
+        else:
+            print("Error: cannot find saved weights")
+        return self
+
+    def load_last_checkpoint(self):
+        # load the most recent weights from the folder of this policy
+        epoch_to_load_weights = self._get_last_saved_reward_epoch()
+        return self.load_checkpoint(epoch_to_load_weights)
+
+    def _get_last_saved_reward_epoch(self):
+        epochs_saved_weights = [int(state.rsplit("-", 1)[1].split(".", 1)[0]) for state in glob(os.path.join(self.folder, "reward_net-*.pth"))]
+        if len(epochs_saved_weights) > 0:
+            return max(epochs_saved_weights)
+        return None
+
+    def _get_last_training_max_epochs(self):
+        with open(os.path.join(self.folder, "training.json"), "rt") as file:
+            j = json.load(file)
+        return j["max_epochs"]
+
+    def interrupt(self):
+        self.running = False
+

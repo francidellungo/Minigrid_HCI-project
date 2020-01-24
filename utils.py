@@ -109,23 +109,12 @@ def auto_device():
     return "cuda" if torch.cuda.is_available() else "cpu"
 
 
-def load_policy(policy_arg, eval_mode=False, device='auto'):
-    return _load_net(policy_arg, "policy_net-", eval_mode, device)
-
-
-def load_reward(reward_arg, eval_mode=False, device='auto'):
-    return _load_net(reward_arg, "reward_net-", eval_mode, device)
-
-
-def _load_net(arg, prefix, eval_mode=False, device='auto'):
+def load_net(arg, eval_mode=False, device='auto'):
     if arg is None:
         return None
     if device == 'auto':
         device = auto_device()
 
-    print('arg: ', arg)
-
-    # TODO: fix here !
     if arg.endswith(".pth"):
         # select specified weights
         checkpoint_to_load_weights = int(arg.rsplit("-", 1)[1].split(".", 1)[0])
