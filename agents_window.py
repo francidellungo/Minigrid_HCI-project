@@ -40,8 +40,6 @@ class AgentsWindow(QMainWindow):
         self._agents_model.agent_added.connect(self.add_agent_to_gui)
         self._agents_model.agent_deleted.connect(self.delete_agent_from_gui)
 
-        self.ui.environments_tabs.removeTab(0) # TODO remove
-
         # Connect the buttons events to slots
         self.ui.btn_create.clicked.connect(self.create_agent_click_slot)
         # self.ui.btn_add_env.clicked.connect()
@@ -98,11 +96,27 @@ class AgentsWindow(QMainWindow):
         scroll_area_content_layout = QVBoxLayout(scroll_area_content_widget)
         scroll_area_content_layout.setObjectName(environment + self.sep + "scroll_area_content_layout") # name is useful to find later the object
 
+        # add label agents
+        list_label = QLabel("Agents                     ", env_tab_widget)
+        list_label.setAlignment(Qt.AlignRight)
+        font = QtGui.QFont()
+        font.setBold(True)
+        font.setItalic(True)
+        font.setWeight(75)
+        list_label.setFont(font)
+        scroll_area_content_layout.addWidget(list_label)
+
         # add delete environment button
+        row_delete = QWidget(env_tab_widget)
+        row_delete.setObjectName(environment + self.sep + "row_delete")
+        row_delete_layout = QHBoxLayout(row_delete)
+        row_delete_layout.addItem(QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum))
         btn_delete = QPushButton("Delete this environment", env_tab_widget)
-        btn_delete.clicked.connect(lambda _, env=environment: self.delete_environment_from_gui(env))
+        btn_delete.clicked.connect(lambda _, env=environment: self.delete_environment_click_slot(env))
         btn_delete.setObjectName(environment + self.sep + "btn_delete")
-        scroll_area_content_layout.addWidget(btn_delete)
+        row_delete_layout.addWidget(btn_delete)
+        row_delete_layout.addItem(QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum))
+        scroll_area_content_layout.addWidget(row_delete)
 
         # add the scroll area to the tab widget, and add the tab widget to the tabs
         env_tab_layout.addWidget(scroll_area)
@@ -142,7 +156,7 @@ class AgentsWindow(QMainWindow):
         row.setObjectName(environment + self.sep + agent + self.sep + "row")
 
         # disable the delete button
-        env_tab_widget.findChild(QPushButton, environment + self.sep + "btn_delete").setVisible(False)
+        env_tab_widget.findChild(QWidget, environment + self.sep + "row_delete").setVisible(False)
 
         # add row to the scroll area
         scroll_area_content_layout.addWidget(row)
@@ -185,7 +199,7 @@ class AgentsWindow(QMainWindow):
 
         self.agents_number[environment] -= 1
         if self.agents_number[environment] == 0:
-            self.ui.environments_tabs.findChild(QPushButton, environment + self.sep + "btn_delete").setVisible(True)
+            self.ui.environments_tabs.findChild(QWidget, environment + self.sep + "row_delete").setVisible(True)
 
     def info_click_slot(self, environment, agent):
         #self.setEnabled(False)
@@ -202,6 +216,12 @@ class AgentsWindow(QMainWindow):
         environment = self.ui.environments_tabs.currentWidget().objectName().split(self.sep)[0]
         GamesController(environment, self, self._agents_model)
         self.ui.btn_create.setEnabled(False)
+
+    def delete_environment_click_slot(self, environment):
+        button_reply = QMessageBox.question(self, 'Confirm delete', "Are you sure you want to delete the environment {}?".format(environment),
+                                            QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
+        if button_reply == QMessageBox.Yes:
+            self._agents_model.delete_environment(environment)
 
     def closeEvent(self, a0: QtGui.QCloseEvent) -> None:
         super().closeEvent(a0)

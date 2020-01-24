@@ -78,17 +78,14 @@ class AgentsModel(QObject):
         self.environment_added.emit(environment)
         return True
 
-    def pop_environment(self, environment: str):
-        if environment not in self._agents:
-            return False
-        env = self._agents.pop(environment)
-        self.environment_deleted.emit(environment)
-        return env
-
     def delete_environment(self, environment: str) -> bool:
         if environment not in self._agents:
             return False
-        self.pop_environment(environment)
+        self._agents.pop(environment)
+        shutil.rmtree(os.path.join(self.agents_dir, environment), ignore_errors=True)
+        shutil.rmtree(os.path.join(self.rewards_dir, environment), ignore_errors=True)
+        shutil.rmtree(os.path.join(self.games_dir, environment), ignore_errors=True)
+        self.environment_deleted.emit(environment)
         return True
 
     def get_environments(self):

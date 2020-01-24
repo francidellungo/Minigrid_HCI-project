@@ -13,7 +13,7 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 class Ui_Agent(object):
     def setupUi(self, Agent):
         Agent.setObjectName("Agent")
-        Agent.resize(715, 390)
+        Agent.resize(884, 450)
         self.centralwidget = QtWidgets.QWidget(Agent)
         self.centralwidget.setObjectName("centralwidget")
         self.horizontalLayout = QtWidgets.QHBoxLayout(self.centralwidget)
@@ -119,7 +119,7 @@ class Ui_Agent(object):
         self.info_scrollArea.setWidgetResizable(True)
         self.info_scrollArea.setObjectName("info_scrollArea")
         self.info_scrollAreaWidgetContents = QtWidgets.QWidget()
-        self.info_scrollAreaWidgetContents.setGeometry(QtCore.QRect(0, 0, 341, 302))
+        self.info_scrollAreaWidgetContents.setGeometry(QtCore.QRect(0, 0, 426, 362))
         self.info_scrollAreaWidgetContents.setObjectName("info_scrollAreaWidgetContents")
         self.info_verticalLayout_2 = QtWidgets.QVBoxLayout(self.info_scrollAreaWidgetContents)
         self.info_verticalLayout_2.setObjectName("info_verticalLayout_2")
@@ -128,7 +128,7 @@ class Ui_Agent(object):
         self.horizontalLayout.addLayout(self.info_verticalLayout)
         Agent.setCentralWidget(self.centralwidget)
         self.menubar = QtWidgets.QMenuBar(Agent)
-        self.menubar.setGeometry(QtCore.QRect(0, 0, 715, 22))
+        self.menubar.setGeometry(QtCore.QRect(0, 0, 884, 22))
         self.menubar.setObjectName("menubar")
         Agent.setMenuBar(self.menubar)
         self.statusbar = QtWidgets.QStatusBar(Agent)

@@ -17,8 +17,6 @@ games_path = 'games'
 
 folder_name = '2020-01-05_15:04:54'
 
-bg_color = QColor('#efebe7')
-
 
 class MyWidget(QWidget):
 
@@ -44,7 +42,6 @@ class GamesView(QMainWindow):
         self.env = env
         # self.counts = []
         self.animations = []
-        self.bg_color = self.palette().color(QPalette.Background)
 
         self.initUI(env)
         self.setWindowTitle(env)
@@ -261,11 +258,11 @@ class GamesView(QMainWindow):
         self.doAnim(row)
 
     def doAnim(self, row):
-        global bg_color
         anim = QPropertyAnimation(row, b"color")
+        row_color = row.palette().color(QtGui.QPalette.Background).name()
         anim.setDuration(1000)
         anim.setStartValue(QColor('gray'))
-        anim.setEndValue(QColor('#efebe7'))
+        anim.setEndValue(QColor(row_color))
         anim.start()
         self.animations.append(anim)
         anim.finished.connect(lambda a=anim: self.animations.remove(a))
