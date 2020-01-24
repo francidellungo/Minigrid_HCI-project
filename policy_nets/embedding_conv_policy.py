@@ -7,11 +7,11 @@ from policy_nets.base_policy_net import PolicyNet
 from utils import conv_output_size, get_num_channels
 
 
-class ConvPolicyNet(PolicyNet):
+class EmbConvPolicyNet(PolicyNet):
 
     def __init__(self, input_shape, num_actions, env, key=None, folder=None):
         # TODO sistemare signature di costruttore e init
-        super(ConvPolicyNet, self).__init__(input_shape, num_actions, env, key, folder)
+        super(EmbConvPolicyNet, self).__init__(input_shape, num_actions, env, key, folder)
         num_embeddings = [3, 2, 1]
         self.embedding_ch0 = nn.Embedding(11, num_embeddings[0])
         self.embedding_ch1 = nn.Embedding(6, num_embeddings[1])
@@ -35,4 +35,4 @@ class ConvPolicyNet(PolicyNet):
 
 
 def get_net(*args, **kwargs):
-    return ConvPolicyNet(*args, **kwargs)
+    return EmbConvPolicyNet(*args, **kwargs)

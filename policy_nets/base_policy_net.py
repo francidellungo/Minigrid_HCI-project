@@ -43,6 +43,7 @@ class PolicyNet(nn.Module):
         self.max_episodes = 0
         self.reward_net_key = None
         self.games = []
+        self.name = os.path.basename(os.path.normpath(folder))
         if folder is None:
             folder = os.path.curdir
         self.folder = folder
@@ -57,7 +58,7 @@ class PolicyNet(nn.Module):
     def current_device(self):
         return next(self.parameters()).device
 
-    def fit(self, episodes=100, batch_size=32, reward_loader=lambda:..., render=False, autosave=False, episodes_for_checkpoint=None, reward_net_key=None, reward_net_games=None,callbacks=[]):
+    def fit(self, episodes=100, batch_size=4, reward_loader=lambda:..., render=False, autosave=False, episodes_for_checkpoint=None, reward_net_key=None, reward_net_games=None,callbacks=[]):
         self.max_episodes = self.episode + episodes
 
         # TODO vedere se c'è verso prenderli dalla reward net invece che come parametro
@@ -144,9 +145,10 @@ class PolicyNet(nn.Module):
                 batch_avg_true_return /= batch_size
                 batch_avg_length /= batch_size
                 # calculate running
-                running_batch_avg_return = batch_avg_return if running_batch_avg_return is None else running_batch_avg_return * 0.95 + batch_avg_return * 0.05
-                running_batch_avg_true_return = batch_avg_true_return if running_batch_avg_true_return is None else running_batch_avg_true_return * 0.95 + batch_avg_true_return * 0.05
-                running_batch_avg_length = batch_avg_length if running_batch_avg_length is None else running_batch_avg_length * 0.95 + batch_avg_length * 0.05
+                smooth_weight = 0.9
+                running_batch_avg_return = batch_avg_return if running_batch_avg_return is None else running_batch_avg_return * smooth_weight + batch_avg_return * (1-smooth_weight)
+                running_batch_avg_true_return = batch_avg_true_return if running_batch_avg_true_return is None else running_batch_avg_true_return * smooth_weight + batch_avg_true_return * (1-smooth_weight)
+                running_batch_avg_length = batch_avg_length if running_batch_avg_length is None else running_batch_avg_length * smooth_weight + batch_avg_length * (1-smooth_weight)
 
                 # print all metrics
                 print("\repisode {}, avg_loss {:6.3f}, avg_length {:6.3f} (running {:6.3f}), avg_return {:6.3f} (running {:6.3f}), avg_true_return {:6.3f} (running {:6.3f}), lr {}   "
@@ -248,8 +250,7 @@ class PolicyNet(nn.Module):
                 summary(self, torch.zeros(get_input_shape()).to(self.current_device()), show_input=False)
                 net_summary = out.getvalue()
             print(net_summary)
-            name = os.path.basename(os.path.normpath(self.folder))
-            j = {"name": name, "type": str(type(self)), "str": str(self).replace("\n", ""), "reward_type": reward_type,
+            j = {"name": self.name, "type": str(type(self)), "str": str(self).replace("\n", ""), "reward_type": reward_type,
                  "size": size, "max_episodes": self.max_episodes, "optimizer": str(self.optimizer),
                  "summary": net_summary}
 

@@ -7,19 +7,18 @@ from policy_nets.base_policy_net import PolicyNet
 from utils import conv_output_size, get_num_channels
 
 
-class ConvPolicyNet(PolicyNet):
+class OneHotConvPolicyNet(PolicyNet):
 
     def __init__(self, input_shape, num_actions, env, key=None, folder=None):
         self.n = 9
         # TODO sistemare signature di costruttore e init
-        super(ConvPolicyNet, self).__init__(input_shape, num_actions, env, key, folder)
+        super(OneHotConvPolicyNet, self).__init__(input_shape, num_actions, env, key, folder)
         self.conv = nn.Conv2d(in_channels=get_num_channels()*self.n, out_channels=64, kernel_size=2)
         o = conv_output_size(input_shape[1], 2, 0, 1)
         self.fc = nn.Linear(64 * o * o, num_actions)
         self.input_shape = input_shape
 
-        weight_decay = 10 ** -4  # penalty for net weights L2 regularization
-        self.optimizer = optim.Adam(self.parameters(), lr=10**-5, weight_decay=weight_decay)
+        self.optimizer = optim.Adam(self.parameters(), lr=10**-5)
 
     def forward(self, x):
         x = x.view(-1, *self.input_shape)
@@ -34,4 +33,4 @@ class ConvPolicyNet(PolicyNet):
 
 
 def get_net(*args, **kwargs):
-    return ConvPolicyNet(*args, **kwargs)
+    return OneHotConvPolicyNet(*args, **kwargs)

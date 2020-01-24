@@ -12,7 +12,7 @@ import torch
 import torch.nn as nn
 
 from tensorboardX import SummaryWriter
-from torchsummary import summary
+from modelsummary import summary
 
 from utils import get_input_shape
 
@@ -85,8 +85,11 @@ class RewardNet(nn.Module):
         self.key = os.path.basename(os.path.normpath(folder))
 
     @abstractmethod
-    def forward(self, x):
+    def forward(self, x, step=0):
         pass
+
+    def current_device(self):
+        return next(self.parameters()).device
 
     def fit(self, X_train, max_epochs=1000, batch_size=16, num_subtrajectories=7, subtrajectory_length=3, X_val=None, use_also_complete_trajectories=True, train_games_info=None, val_games_info=None, autosave=False, epochs_for_checkpoint=None, train_games=None, callbacks=[]):
 
@@ -246,7 +249,7 @@ class RewardNet(nn.Module):
     def calculate_trajectories_scores(self, X):
         trajectories_scores = []
         for t, trajectory in enumerate(X):
-            trajectory_scores = self(trajectory)
+            trajectory_scores = self(trajectory, torch.tensor(range(len(trajectory)), requires_grad=False))  # TODO calcolare per più traiettorie alla volta?
             trajectories_scores.append(trajectory_scores)
 
         return trajectories_scores
@@ -255,7 +258,7 @@ class RewardNet(nn.Module):
     def quality(self, X):
         test_scores = []
         for t, trajectory in enumerate(X):
-            trajectory_score = self(trajectory).sum()
+            trajectory_score = self(trajectory, torch.tensor(range(len(trajectory)), requires_grad=False)).sum()
             test_scores.append(trajectory_score)
 
         quality = 0
@@ -307,7 +310,8 @@ class RewardNet(nn.Module):
 
         with open(os.path.join(self.folder, "training.json"), "wt") as file:
             with io.StringIO() as out, redirect_stdout(out):
-                summary(self, get_input_shape())
+                summary(self, torch.zeros(get_input_shape()).to(self.current_device()), show_input=True)
+                summary(self, torch.zeros(get_input_shape()).to(self.current_device()), show_input=False)
                 net_summary = out.getvalue()
             print(net_summary)
             j = {"type": str(type(self)), "str": str(self).replace("\n", ""), "optimizer": str(self.optimizer),
