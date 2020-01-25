@@ -45,8 +45,19 @@ class AgentsWindow(QMainWindow):
         # self.ui.btn_add_env.clicked.connect()
         # self.ui.btn_delete_env.clicked.connect()
 
+        # create button for add the first environment
+        self.row_big_add_env = QWidget()
+        self.row_big_add_env_layout = QHBoxLayout(self.row_big_add_env)
+        self.row_big_add_env_layout.addItem(QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum))
+        self.big_btn_add_env = QPushButton("Add environment")
+        self.big_btn_add_env.setSizePolicy(QtWidgets.QSizePolicy.Maximum, QtWidgets.QSizePolicy.Maximum)
+        self.big_btn_add_env.clicked.connect(self.ask_for_new_environment)
+        self.row_big_add_env_layout.addWidget(self.big_btn_add_env)
+        self.row_big_add_env_layout.addItem(QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum))
+        self.ui.verticalLayout.addWidget(self.row_big_add_env)
+
         # Update GUI loading model data
-        self.update_gui_from_model()
+        self.create_gui_from_model()
         self.ui.environments_tabs.setCurrentIndex(0)
 
         # add environment button
@@ -54,16 +65,23 @@ class AgentsWindow(QMainWindow):
         self.btn_add_env.clicked.connect(self.ask_for_new_environment)
         self.ui.environments_tabs.setCornerWidget(self.btn_add_env, Qt.TopRightCorner)
 
-    def update_gui_from_model(self):
+    def create_gui_from_model(self):
         agents_envs = self._agents_model.get_environments()
         for env in get_all_environments():
             if env not in agents_envs:
                 continue
 
             self.add_environment_to_gui(env)
-
             for agent_key in self._agents_model.get_agents(env):
                 self.add_agent_to_gui(env, agent_key)
+
+        self.refresh_visibility()
+
+    def refresh_visibility(self):
+        envs_exist = len(self._agents_model.get_environments()) > 0
+        self.row_big_add_env.setVisible(not envs_exist)
+        self.ui.environments_tabs.setVisible(envs_exist)
+        self.ui.btn_create.setVisible(envs_exist)
 
     def ask_for_new_environment(self):
         items = get_all_environments() - self._agents_model.get_environments()
@@ -124,10 +142,14 @@ class AgentsWindow(QMainWindow):
 
         self.ui.environments_tabs.setCurrentIndex(len(self.ui.environments_tabs)-1)
 
+        self.refresh_visibility()
+
     def delete_environment_from_gui(self, environment):
         env_tab_widget = self.ui.environments_tabs.findChild(QWidget, environment + self.sep + "env_tab_widget")
         index = self.ui.environments_tabs.indexOf(env_tab_widget)
         self.ui.environments_tabs.removeTab(index)
+
+        self.refresh_visibility()
 
     def add_agent_to_gui(self, environment, agent):
         env_tab_widget = self.ui.environments_tabs.findChild(QWidget, environment + self.sep + "env_tab_widget")
@@ -170,15 +192,13 @@ class AgentsWindow(QMainWindow):
         # link slot to agent_updated signal
         self._agents_model.agent_updated.connect(self.update_agent_on_gui)
 
-    def update_agent_on_gui(self, environment, agent_key): # TODO rivedere
+    def update_agent_on_gui(self, environment, agent_key):
         agent = self._agents_model.get_agent(environment, agent_key)
-        max_episodes = agent.max_episodes
-        current_episode = agent.episode
 
         label_loading = self.ui.environments_tabs.findChild(QWidget, environment + self.sep + "env_tab_widget").\
             findChild(QLabel, environment + self.sep + agent_key + self.sep + "label_loading")
 
-        if current_episode is not None and current_episode + 1 == max_episodes: # +1 is used because episode count starts from 0
+        if not agent.running:
             label_loading.setMovie(None)
             label_loading.setVisible(False)
         else:
