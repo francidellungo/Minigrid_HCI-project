@@ -64,12 +64,13 @@ class AgentsModel(QObject):
 
         print("loaded {} agents from {} environments".format(agents_loaded, envs_loaded))
 
-        # for each environment in games_dir
-        for env in os.listdir(self.games_dir):
-            env_dir = os.path.join(self.games_dir, env)
-            if not os.path.isdir(env_dir):
-                continue
-            self.add_environment(env)
+        if os.path.exists(self.games_dir):
+            # for each environment in games_dir
+            for env in os.listdir(self.games_dir):
+                env_dir = os.path.join(self.games_dir, env)
+                if not os.path.isdir(env_dir):
+                    continue
+                self.add_environment(env)
 
     def add_environment(self, environment: str) -> bool:
         if environment in self._agents:

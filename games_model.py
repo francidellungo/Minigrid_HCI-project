@@ -82,34 +82,37 @@ class GamesModel(QObject):
 
         self.game_moved.emit(dest_list_name, folder_name)
 
-    def remove_game(self, folder_name, list_):
+    def remove_game(self, game_key, list_=None):
         """
         remove a game from a list
-        :param folder_name: game name of the game to be removed
+        :param game_key: game name of the game to be removed
         :param list_: 'games' or 'rank'
         :return:
         """
 
+        if list_ is None:
+            list_ = 'games' if game_key in self.games_list else 'ranked'
+
         if list_ == 'games':
             # print(len(self.games_list))
-            self.games_list.remove(folder_name)
-            # del self.games[str(folder_name)]
+            self.games_list.remove(game_key)
+            # del self.games[str(game_key)]
         else:
-            self.ranked_games.remove(folder_name)
+            self.ranked_games.remove(game_key)
 
-        removing_dir = os.path.join(games_path, self.env, folder_name)
-        if self.agents_model.game_used_by_some_agent(self.env, folder_name):
+        removing_dir = os.path.join(games_path, self.env, game_key)
+        if self.agents_model.game_used_by_some_agent(self.env, game_key):
             # write "to_delete": true in json
-            with open(os.path.join(games_path, self.env, folder_name, "game.json"), "rt") as file:
+            with open(os.path.join(games_path, self.env, game_key, "game.json"), "rt") as file:
                 j = json.load(file)
             j["to_delete"] = True
-            with open(os.path.join(games_path, self.env, folder_name, "game.json"), "wt") as file:
+            with open(os.path.join(games_path, self.env, game_key, "game.json"), "wt") as file:
                 json.dump(j, file)
         else:
             # delete game directory
             shutil.rmtree(removing_dir, ignore_errors=True)
 
-        self.game_removed.emit(folder_name)
+        self.game_removed.emit(game_key)
 
     def move_up(self, game_name):
         # move element up in the rank list

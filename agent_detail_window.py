@@ -11,6 +11,8 @@ from PyQt5.QtGui import QMovie, QPixmap, QImage
 from PyQt5.QtWidgets import QMainWindow, QMessageBox, QHBoxLayout, QLabel, QPushButton, QWidget
 
 from agent_detail_ui import Ui_Agent
+from games_model import GamesModel
+from games_view import GamesListView
 from utils import nparray_to_qpixmap, state_filter
 
 games_path = 'games'
@@ -32,6 +34,9 @@ class AgentDetailWindow(QMainWindow):
         self.ui.setupUi(self)
         self.setWindowTitle(agent_key)
         self.ui.txt_name.setText(self.agent.name)
+        self.games_model = GamesModel(environment, agents_model)
+        self.widget_list_games = GamesListView(self.games_model, environment, False, False, False, False)
+        self.ui.info_scrollArea.setWidget(self.widget_list_games)
 
         # update text label and gif label of training status (completed / training)
         self.refresh_training_status()
@@ -41,11 +46,14 @@ class AgentDetailWindow(QMainWindow):
         self.ui.btnDeleteAgent.clicked.connect(self.delete)
 
         # display on the right side of the window the games used to train the reward used to train this policy
-        self.display_games()
+#        self.display_games()
 
         # start the thread that plays minigrid with this agent (policy)
         self.game_thread = GameThread(self.agent, environment, self.ui.labelGame)
         self.game_thread.start()
+
+        for game_key in reversed(agents_model.get_agent(environment, agent_key).games):
+            self.widget_list_games.add_game(game_key)
 
     def refresh_training_status(self):
         max_episodes = self.agent.max_episodes
@@ -78,59 +86,6 @@ class AgentDetailWindow(QMainWindow):
             print("successfully deleted")
             self.close()
 
-    def display_games(self):
-        games = self.agents_model.get_agent(self.environment, self.agent_key).games
-        if games is not None and len(games) > 0:
-            for game in reversed(games):
-                self.add_row(game)
-
-    def add_row(self, folder_name):
-        horiz = QHBoxLayout()
-        horiz.addWidget(QLabel(folder_name))
-        img_path = os.path.join(games_path, self.environment, folder_name, 'game0.png')
-        pixmap = QPixmap(img_path)
-        img_label = QLabel()
-        img_label.setScaledContents(True)
-        img_label.setPixmap(pixmap)
-        img_label.setFixedSize(150, 150)
-        horiz.addWidget(img_label)
-        horiz.addWidget(QPushButton('info'))
-        timer = QTimer()
-        dir_path = os.path.join(games_path, self.environment, folder_name)
-
-        img_label.enterEvent = lambda ev: self.show_traj_imgs(dir_path, img_label, timer)
-        img_label.leaveEvent = lambda ev: self.stop_show_traj(dir_path, img_label, timer)
-
-        self.ui.info_verticalLayout_2.addLayout(horiz)
-
-        # self.update_image(0)
-    def show_traj_imgs(self, games_dir, img_label, timer):
-        imgs_nums = [elem.split('game')[1].split('.')[0] for elem in os.listdir(games_dir) if elem.endswith(".png")]
-        imgs_nums.sort(key=int)
-        imgs = ['game' + str(img_num) + '.png' for img_num in imgs_nums]
-
-        imgs_cycle = cycle(imgs)
-
-        # show images in loop with only one timer.
-        timer.timeout.connect(lambda: self.on_timeout(os.path.join(games_dir, next(imgs_cycle)), img_label))
-        timer.start(250)
-
-    def stop_show_traj(self, games_dir, img_label, timer):
-        timer.stop()
-        # reinizialize image
-        imgs_nums = [elem.split('game')[1].split('.')[0] for elem in os.listdir(games_dir) if elem.endswith(".png")]
-        imgs_nums.sort(key=int)
-        imgs = ['game' + str(img_num) + '.png' for img_num in imgs_nums]
-        self.on_timeout(os.path.join(games_dir, imgs[0]), img_label)
-
-    def on_timeout(self, image, img_label):
-        try:
-            pixmap = QPixmap(image)
-            if not pixmap.isNull():
-                img_label.setPixmap(pixmap)
-        except StopIteration:
-            pass
-        #     self.timer.stop()
 
 class GameThread(Thread):
     def __init__(self, agent, environment, game_qlabel):
