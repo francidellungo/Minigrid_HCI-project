@@ -130,6 +130,7 @@ class Game:
             # Save state
             self.game_info['trajectory'].append(state_filter(self.obs).tolist())
             self.game_info['rewards'].append(reward)
+            # print('rewards', self.game_info['rewards'])
             # Save screenshots
             screenshot_file = 'game' + str(self.env.step_count) + '.png'
             pixmap = self.env.render('pixmap')
@@ -138,6 +139,12 @@ class Game:
         self._refresh_gui(self.obs)
         if done:
             print('done!')
+
+            # try use normalized reward
+            # print(self.game_info['rewards'])
+            # self.game_info['rewards'] = normalize(self.game_info['rewards'])
+            # print('normalized', self.game_info['rewards'])
+
             self.print_rewards()
             self.print_discounted_rewards()
             if self.games_directory is not None and self.autosave:

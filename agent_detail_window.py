@@ -6,9 +6,9 @@ from itertools import cycle
 import gym
 import gym_minigrid
 from PyQt5 import QtGui
-from PyQt5.QtCore import QTimer
+from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QMovie, QPixmap, QImage
-from PyQt5.QtWidgets import QMainWindow, QMessageBox, QHBoxLayout, QLabel, QPushButton, QWidget, QStyle
+from PyQt5.QtWidgets import QMainWindow, QMessageBox, QHBoxLayout, QLabel, QPushButton, QWidget, QStyle, QSlider
 
 from agent_detail_ui import Ui_Agent
 from games_model import GamesModel
@@ -32,6 +32,14 @@ class AgentDetailWindow(QMainWindow):
         # init UI
         self.ui = Ui_Agent()
         self.ui.setupUi(self)
+
+        # ProgressBar & Slider
+        self.ui.progressBarTraining.setFixedWidth(200)
+        self.ui.SliderTraining.setFixedWidth(200)
+        # self.ui.SliderTraining.setMaximum(10)
+        # self.ui.SliderTraining.setTickInterval(1)
+        # self.ui.SliderTraining.setValue(2)
+
         self.setWindowTitle(agent_key)
         self.ui.txt_name.setText(self.agent.name)
         self.games_model = GamesModel(environment, agents_model)
