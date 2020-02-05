@@ -8,7 +8,7 @@ import gym_minigrid
 from PyQt5 import QtGui
 from PyQt5.QtCore import QTimer
 from PyQt5.QtGui import QMovie, QPixmap, QImage
-from PyQt5.QtWidgets import QMainWindow, QMessageBox, QHBoxLayout, QLabel, QPushButton, QWidget
+from PyQt5.QtWidgets import QMainWindow, QMessageBox, QHBoxLayout, QLabel, QPushButton, QWidget, QStyle
 
 from agent_detail_ui import Ui_Agent
 from games_model import GamesModel
@@ -37,16 +37,15 @@ class AgentDetailWindow(QMainWindow):
         self.games_model = GamesModel(environment, agents_model)
         self.widget_list_games = GamesListView(self.games_model, environment, False, False, False, False)
         self.ui.info_scrollArea.setWidget(self.widget_list_games)
+        self.ui.btnPlayPause.setIcon(self.style().standardIcon(QStyle.SP_MediaPause))
 
         # update text label and gif label of training status (completed / training)
         self.refresh_training_status()
         self.agents_model.agent_updated.connect(lambda env, ag: self.refresh_training_status() if env==self.environment and ag==self.agent_key else lambda: ...)
 
-        # link slot to delete the agent
+        # link slots
         self.ui.btnDeleteAgent.clicked.connect(self.delete)
-
-        # display on the right side of the window the games used to train the reward used to train this policy
-#        self.display_games()
+        self.ui.btnPlayPause.clicked.connect(self.playPauseSlot)
 
         # start the thread that plays minigrid with this agent (policy)
         self.game_thread = GameThread(self.agent, environment, self.ui.labelGame)
@@ -59,17 +58,30 @@ class AgentDetailWindow(QMainWindow):
         max_episodes = self.agent.max_episodes
         current_episode = self.agent.episode
 
-        if current_episode + 1 == max_episodes: # +1 is used because episode count starts from 0
-            self.ui.labelStatus.setText("Status: training completed")
-            self.ui.progressBarTraining.setEnabled(False)
+        if not self.agent.running or current_episode + 1 == max_episodes: # +1 is used because episode count starts from 0
             self.ui.labelLoading.setText("")
             self.ui.labelLoading.setVisible(False)
+            self.ui.labelLoading.setMovie(None)
+
+            if current_episode + 1 == max_episodes:
+                self.ui.labelStatus.setText("Status: training completed")
+                self.ui.progressBarTraining.setEnabled(False)
+                self.ui.btnPlayPause.setVisible(False)
+            else:
+                self.ui.labelStatus.setText("Status: paused")
+                self.ui.progressBarTraining.setEnabled(True)
+                self.ui.btnPlayPause.setIcon(self.style().standardIcon(QStyle.SP_MediaPlay))
+                self.ui.btnPlayPause.setVisible(True)
+
         else:
             self.ui.labelStatus.setText("Status: training")
-            self.gif = QMovie(os.path.join("img", "loading.gif"))
-            self.gif.start()
-            self.ui.labelLoading.setMovie(self.gif)
             self.ui.labelLoading.setVisible(True)
+            self.ui.btnPlayPause.setIcon(self.style().standardIcon(QStyle.SP_MediaPause))
+            self.ui.btnPlayPause.setVisible(True)
+            if self.ui.labelLoading.movie() is None:
+                self.gif = QMovie(os.path.join("img", "loading.gif"))
+                self.gif.start()
+                self.ui.labelLoading.setMovie(self.gif)
 
         self.ui.progressBarTraining.setMaximum(max_episodes)
         self.ui.progressBarTraining.setValue(current_episode+1)
@@ -85,6 +97,14 @@ class AgentDetailWindow(QMainWindow):
             self.agents_model.delete_agent(self.environment, self.agent_key)
             print("successfully deleted")
             self.close()
+
+    def playPauseSlot(self):
+        if self.agent.running:
+            self.agent.pause()
+        else:
+            self.agent.play()
+
+        self.refresh_training_status()
 
 
 class GameThread(Thread):

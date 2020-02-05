@@ -89,6 +89,7 @@ class RewardNet(nn.Module):
         self.key = os.path.basename(os.path.normpath(folder))
         self.epoch = 0
         self.max_epochs = 0
+        self.interrupted = False
         self.running = False
 
         if epoch_to_load is not None:
@@ -249,7 +250,7 @@ class RewardNet(nn.Module):
                 if "on_epoch_end" in callback:
                     callback["on_epoch_end"](self)
 
-            if not self.running:
+            if self.interrupted:
                 break
 
         self.running = False
@@ -382,5 +383,5 @@ class RewardNet(nn.Module):
         return j["max_epochs"]
 
     def interrupt(self):
-        self.running = False
+        self.interrupted = True
 

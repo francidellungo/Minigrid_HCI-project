@@ -257,7 +257,7 @@ class GameView(QWidget):
             # delete game btn
             if has_delete_btn:
                 self.delete_pb = QPushButton()
-                self.delete_pb.setIcon(self.style().standardIcon(QStyle.SP_DialogCancelButton))
+                self.delete_pb.setIcon(self.style().standardIcon(QStyle.SP_DialogCloseButton))
 
                 self.delete_pb.setSizePolicy(QSizePolicy.Maximum, QSizePolicy.Maximum)
                 self.btns_group_layout.addWidget(self.delete_pb, alignment=QtCore.Qt.AlignCenter)

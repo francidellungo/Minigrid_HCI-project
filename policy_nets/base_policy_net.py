@@ -5,6 +5,7 @@ from abc import abstractmethod
 import json
 from contextlib import redirect_stdout
 from glob import glob
+from threading import Thread
 
 import torch
 import torch.nn as nn
@@ -47,6 +48,7 @@ class PolicyNet(nn.Module):
         if folder is None:
             folder = os.path.curdir
         self.folder = folder
+        self.interrupted = False
         self.running = False
 
         if episode_to_load is not None:
@@ -132,6 +134,9 @@ class PolicyNet(nn.Module):
             batch_avg_true_return += sum(true_rewards)
             batch_avg_length += length
 
+            while not self.running:  # active wait TODO change
+                pass
+
             # if this is the last episode of the batch
             if self.episode % batch_size == batch_size-1:
                 ''' backpropagation and optimizer step to update net weights '''
@@ -181,8 +186,11 @@ class PolicyNet(nn.Module):
                 if "on_episode_end" in callback:
                     callback["on_episode_end"](self)
 
-            if not self.running:
+            if self.interrupted:
                 break
+
+            while not self.running:  # active wait TODO change
+                pass
 
         self.running = False
 
@@ -315,5 +323,15 @@ class PolicyNet(nn.Module):
             j = json.load(file)
         return j["max_episodes"]
 
-    def interrupt(self):
+    def play(self):
+        self.running = True
+
+        # t = Thread()
+        # t.run = lambda: print(("fhgf"))
+        # t.start()
+
+    def pause(self):
         self.running = False
+
+    def interrupt(self):
+        self.interrupted = True
