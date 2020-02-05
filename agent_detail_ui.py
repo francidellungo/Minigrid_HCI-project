@@ -53,6 +53,7 @@ class Ui_Agent(object):
         self.SliderTraining.setMouseTracking(False)
         self.SliderTraining.setStyleSheet("")
         self.SliderTraining.setMaximum(10)
+        self.SliderTraining.setPageStep(2)
         self.SliderTraining.setOrientation(QtCore.Qt.Horizontal)
         self.SliderTraining.setTickPosition(QtWidgets.QSlider.TicksAbove)
         self.SliderTraining.setTickInterval(1)
