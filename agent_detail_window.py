@@ -36,6 +36,9 @@ class AgentDetailWindow(QMainWindow):
         # ProgressBar & Slider
         self.ui.progressBarTraining.setFixedWidth(200)
         self.ui.SliderTraining.setFixedWidth(200)
+
+        self.ui.SliderTraining.setVisible(False) if self.agent.running else self.ui.SliderTraining.setVisible(True)
+
         # self.ui.SliderTraining.setMaximum(10)
         # self.ui.SliderTraining.setTickInterval(1)
         # self.ui.SliderTraining.setValue(2)
@@ -109,8 +112,10 @@ class AgentDetailWindow(QMainWindow):
     def playPauseSlot(self):
         if self.agent.running:
             self.agent.pause()
+            self.ui.SliderTraining.setVisible(True)
         else:
             self.agent.play()
+            self.ui.SliderTraining.setVisible(False)
 
         self.refresh_training_status()
 
