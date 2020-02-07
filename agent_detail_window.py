@@ -13,6 +13,7 @@ from PyQt5.QtWidgets import QMainWindow, QMessageBox, QHBoxLayout, QLabel, QPush
 from agent_detail_ui import Ui_Agent
 from games_model import GamesModel
 from games_view import GamesListView
+from trainer import TrainingManager
 from utils import nparray_to_qpixmap, state_filter
 
 games_path = 'games'
@@ -107,10 +108,14 @@ class AgentDetailWindow(QMainWindow):
             self.close()
 
     def playPauseSlot(self):
-        if self.agent.running:
-            self.agent.pause()
+
+        if self.agents_model.is_agent_training(self.environment, self.agent_key):
+            if not self.agent.running:
+                self.agents_model.play_agent(self.environment, self.agent_key)
+            else:
+                self.agents_model.pause_agent(self.environment, self.agent_key)
         else:
-            self.agent.play()
+            self.agents_model.resume_agent_training(self.environment, self.agent_key)
 
         self.refresh_training_status()
 

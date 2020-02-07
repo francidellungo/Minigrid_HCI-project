@@ -110,7 +110,9 @@ class RewardNet(nn.Module):
         print('output directory:\n"' + os.path.abspath(self.folder) + '"')
         tb_path = os.path.abspath(os.path.join(self.folder, "tensorboard"))
         print('to visualize training progress:\n`tensorboard --logdir="{}"`'.format(tb_path))
+        print('creating SummaryWriter...')
         tensorboard = SummaryWriter(tb_path)
+        print('SummaryWriter created')
 
         ''' save info about this training in training.json, and also save the structure of the network '''
         self.save_training_details(batch_size, num_subtrajectories, subtrajectory_length, use_also_complete_trajectories, train_games)
@@ -322,8 +324,10 @@ class RewardNet(nn.Module):
 
     ''' save net and training details in training.json '''
     def save_training_details(self, batch_size, num_subtrajectories, subtrajectory_length, use_also_complete_trajectories, train_games):
+        print("saving details")
         if not os.path.exists(self.folder):
             os.makedirs(self.folder)
+            'created dir "' + self.folder + '"'
 
         with open(os.path.join(self.folder, "training.json"), "wt") as file:
             with io.StringIO() as out, redirect_stdout(out):
@@ -339,6 +343,7 @@ class RewardNet(nn.Module):
             if train_games is not None:
                 j["games"] = train_games
             json.dump(j, file, indent=True)
+            print('details saved on ' + os.path.join(self.folder, "training.json"))
 
     def save_network(self):
         # torch.save(self, os.path.join(self.folder, "net.pth"))
