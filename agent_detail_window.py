@@ -52,6 +52,10 @@ class AgentDetailWindow(QMainWindow):
         self.ui.info_scrollArea.setWidget(self.widget_list_games)
         self.ui.btnPlayPause.setIcon(self.style().standardIcon(QStyle.SP_MediaPause))
 
+        # start the thread that plays minigrid with this agent (policy)
+        self.game_thread = GameThread(self.agent, environment, self.ui.labelGame)
+        self.game_thread.start()
+
         # update text label and gif label of training status (completed / training)
         self.refresh_training_status()
         self.agents_model.agent_updated.connect(lambda env, ag: self.refresh_training_status() if env==self.environment and ag==self.agent_key else lambda: ...)
@@ -59,10 +63,6 @@ class AgentDetailWindow(QMainWindow):
         # link slots
         self.ui.btnDeleteAgent.clicked.connect(self.delete)
         self.ui.btnPlayPause.clicked.connect(self.playPauseSlot)
-
-        # start the thread that plays minigrid with this agent (policy)
-        self.game_thread = GameThread(self.agent, environment, self.ui.labelGame)
-        self.game_thread.start()
 
         for game_key in reversed(agents_model.get_agent(environment, agent_key).games):
             self.widget_list_games.add_game(game_key)
@@ -80,21 +80,26 @@ class AgentDetailWindow(QMainWindow):
                 self.ui.labelStatus.setText("Status: training completed")
                 self.ui.progressBarTraining.setEnabled(False)
                 self.ui.btnPlayPause.setVisible(False)
+                self.ui.SliderTraining.setVisible(True)
             else:
                 self.ui.labelStatus.setText("Status: paused")
                 self.ui.progressBarTraining.setEnabled(True)
                 self.ui.btnPlayPause.setIcon(self.style().standardIcon(QStyle.SP_MediaPlay))
                 self.ui.btnPlayPause.setVisible(True)
+                self.ui.SliderTraining.setVisible(True)
 
         else:
             self.ui.labelStatus.setText("Status: training")
             self.ui.labelLoading.setVisible(True)
             self.ui.btnPlayPause.setIcon(self.style().standardIcon(QStyle.SP_MediaPause))
             self.ui.btnPlayPause.setVisible(True)
+            self.ui.SliderTraining.setVisible(False)
             if self.ui.labelLoading.movie() is None:
                 self.gif = QMovie(os.path.join("img", "loading.gif"))
                 self.gif.start()
                 self.ui.labelLoading.setMovie(self.gif)
+            if self.agent != self.game_thread.agent:
+                self.game_thread.set_agent(self.agent)
 
         self.ui.progressBarTraining.setMaximum(max_episodes)
         self.ui.progressBarTraining.setValue(current_episode+1)
@@ -145,12 +150,11 @@ class AgentDetailWindow(QMainWindow):
         if s_val > int(max(policies) / num_checkpoints):
             s_val = int(max(policies) / num_checkpoints)
             self.ui.SliderTraining.setValue(s_val)
-        self.game_thread.interrupt()
-        policy_net = os.path.join(policy_name, self.environment, self.agent_key,
-                                  'policy_net-' + str(s_val * num_checkpoints) + '.pth')
-        self.playing_agent = load_net(policy_net)
-        self.game_thread = GameThread(self.playing_agent, self.environment, self.ui.labelGame)
-        self.game_thread.start()
+
+        policy_net = os.path.join(policy_name, self.environment, self.agent_key, 'policy_net-' + str(s_val * num_checkpoints) + '.pth')
+        new_agent = load_net(policy_net)
+        if new_agent.episode != self.game_thread.agent:
+            self.game_thread.set_agent(new_agent)
 
 
 class GameThread(Thread):
@@ -187,3 +191,7 @@ class GameThread(Thread):
 
     def interrupt(self):
         self._running = False
+
+    def set_agent(self, new_agent):
+        self.agent = new_agent
+        self.env.reset()
