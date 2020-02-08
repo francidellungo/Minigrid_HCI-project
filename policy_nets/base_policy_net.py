@@ -137,8 +137,9 @@ class PolicyNet(nn.Module):
             batch_avg_true_return += sum(true_rewards)
             batch_avg_length += length
 
-            while not self.running:  # active wait TODO change
-                pass
+            for callback in callbacks:
+                if "before_update" in callback:
+                    callback["before_update"](self)
 
             # if this is the last episode of the batch
             if self.episode % batch_size == batch_size-1:
@@ -191,9 +192,6 @@ class PolicyNet(nn.Module):
 
             if self.interrupted:
                 break
-
-            while not self.running:  # active wait TODO change
-                pass
 
         self.running = False
 
