@@ -189,4 +189,3 @@ class Ui_Agent(object):
         self.label.setText(_translate("Agent", "Name:"))
         self.btnDeleteAgent.setText(_translate("Agent", "Delete agent"))
         self.list_title_label.setText(_translate("Agent", "Games used for training"))
-

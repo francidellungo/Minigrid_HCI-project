@@ -48,11 +48,12 @@ class PolicyNet(nn.Module):
         if folder is None:
             folder = os.path.curdir
         self.folder = folder
-        self.interrupted = False
-        self.running = False
 
         if episode_to_load is not None:
             self.load_checkpoint(episode_to_load)
+
+        self.interrupted = False
+        self.running = False
 
     @abstractmethod
     def forward(self, x):
@@ -65,8 +66,10 @@ class PolicyNet(nn.Module):
         self.max_episodes = self.episode + episodes
 
         # TODO vedere se c'è verso prenderli dalla reward net invece che come parametro
-        self.reward_net_key = reward_net_key
-        self.games = reward_net_games
+        if reward_net_key is not None:
+            self.reward_net_key = reward_net_key
+        if reward_net_games is not None:
+            self.games = reward_net_games
 
         for callback in callbacks:
             if "on_train_begin" in callback:
@@ -82,7 +85,7 @@ class PolicyNet(nn.Module):
         tensorboard = SummaryWriter(tb_path)
 
         ''' save info about this training in training.json, and also save the structure of the network '''
-        self._save_training_details(reward, batch_size, reward_net_key)
+        self._save_training_details(reward, batch_size, self.reward_net_key)
         self.save_network()
 
         ''' init metrics '''
@@ -323,15 +326,12 @@ class PolicyNet(nn.Module):
             j = json.load(file)
         return j["max_episodes"]
 
+    def interrupt(self):
+        self.interrupted = True
+        self.running = True
+
     def play(self):
         self.running = True
 
-        # t = Thread()
-        # t.run = lambda: print(("fhgf"))
-        # t.start()
-
     def pause(self):
         self.running = False
-
-    def interrupt(self):
-        self.interrupted = True

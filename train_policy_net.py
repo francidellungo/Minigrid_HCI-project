@@ -59,6 +59,7 @@ def train_policy(env_name, policy_net=default_policy, reward_net_arg=None, polic
 
     # # save trained policy_net net
     # torch.save(policy_net.state_dict(), options.output)
+    return policy_net
 
 
 def get_reward_key(reward_net_path):

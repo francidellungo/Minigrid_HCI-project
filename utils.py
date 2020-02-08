@@ -86,7 +86,7 @@ def print_state(state, flip=True):
 
 
 def get_num_actions():
-    return 3
+    return 7
 
 
 def get_all_environments():
@@ -160,6 +160,16 @@ def standardize(values):
     mean = np.mean(values)
     std = np.std(values) + 10 ** -7
     return [(v-mean)/std for v in values]
+
+
+def standardize_with_memory(values, mem=0.9):
+    running_avg = sum(values)/len(values)
+    running_std = np.std(values)
+    yield standardize(values)
+    while True:
+        running_avg = mem * running_avg + (1-mem) * sum(values)/len(values)
+        running_std = mem * running_std + (1-mem) * np.std(values) + 10 ** -7
+        yield [(v-running_avg)/running_std for v in values]
 
 
 def rounded_list(iterator, digits=2):

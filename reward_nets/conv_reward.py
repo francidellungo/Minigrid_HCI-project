@@ -35,7 +35,7 @@ class ConvRewardNet(RewardNet):
         assert len(steps) == batch_size
 
         x = F.relu(self.conv(x)).view(batch_size, -1)
-        s = torch.tensor(steps, requires_grad=False, device=self.current_device(), dtype=torch.float).view(batch_size, -1)
+        s = steps.to(self.current_device()).float().view(batch_size, -1)
 
         return self.fc(torch.cat((x, s), 1))
 

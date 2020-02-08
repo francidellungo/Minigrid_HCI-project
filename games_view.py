@@ -77,6 +77,7 @@ class GamesView(QMainWindow):
         # print(self.ui.ranking_verticalLayout)
 
     def closeEvent(self, a0: QtGui.QCloseEvent) -> None:
+        print("closing")  # TODO check why this window sometimes closes by its own and this event it's not raised
         super().closeEvent(a0)
         self.agents_window.ui.btn_create.setEnabled(True)
 
@@ -278,6 +279,12 @@ class GameView(QWidget):
             self.horiz.addWidget(self.move_right_btn)
             self.move_right_btn.clicked.connect(lambda: self.games_model.move_game(self.parent().objectName(), game_key))
 
+        # reinizialize image
+        imgs_nums = self.get_imgs_nums()
+        imgs_nums.sort(key=int)
+        imgs = ['game' + str(img_num) + '.png' for img_num in imgs_nums]
+        self.default_img = imgs[0]
+
     def _set_color(self, col):
         palette = self.palette()
         palette.setColor(self.backgroundRole(), col)
@@ -307,11 +314,7 @@ class GameView(QWidget):
 
     def stop_show_traj(self):
         self.timer.stop()
-        # reinizialize image
-        imgs_nums = self.get_imgs_nums()
-        imgs_nums.sort(key=int)
-        imgs = ['game' + str(img_num) + '.png' for img_num in imgs_nums]
-        self.on_timeout(os.path.join(self.game_dir, imgs[0]))
+        self.on_timeout(os.path.join(self.game_dir, self.default_img))
 
     def on_timeout(self, image):
         try:

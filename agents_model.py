@@ -93,7 +93,7 @@ class AgentsModel(QObject):
         return self._agents.keys()
 
     def create_agent(self, environment: str, games: list):
-        TrainingManager.train_new_agent(environment, games, self, lambda agent: self.add_agent(environment, agent.key, agent) or self.update_agent(environment, agent.key))
+        TrainingManager.train_new_agent(environment, games, self, lambda agent: self.agent_updated.emit(environment, agent.key))
 
     def add_agent(self, environment: str, agent_key: str, agent:PolicyNet=None) -> bool:
         if environment not in self._agents:
@@ -109,12 +109,6 @@ class AgentsModel(QObject):
         self.agent_added.emit(environment, agent_key)
         return True
 
-    def update_agent(self, environment: str, agent_key: str) -> bool:
-        if environment not in self._agents or agent_key not in self._agents[environment]:
-            return False
-        self.agent_updated.emit(environment, agent_key)
-        return True
-
     def delete_agent(self, environment: str, agent_key: str) -> bool:
         if environment not in self._agents or agent_key not in self._agents[environment]:
             return False
@@ -122,6 +116,8 @@ class AgentsModel(QObject):
         shutil.rmtree(agent.folder, ignore_errors=True)
         self._delete_agent_games(environment, agent)
         self.agent_deleted.emit(environment, agent_key)
+        if TrainingManager.is_agent_training(environment, agent_key):
+            TrainingManager.interrupt_training(environment, agent_key)
         return True
 
     def _delete_agent_games(self, environment, agent):
@@ -144,7 +140,10 @@ class AgentsModel(QObject):
         return False
 
     def get_agent(self, environment: str, agent_key: str):
-        return self._agents[environment][agent_key]
+        try:
+            return self._agents[environment][agent_key]
+        except KeyError:
+            return None
 
     def read_agent_games(self, environment, reward_key):
         trained_reward_info = os.path.join(self.rewards_dir, environment, reward_key, "training.json")
@@ -189,3 +188,17 @@ class AgentsModel(QObject):
         if environment in self._agents:
             return self._agents[environment].keys()
         return []
+
+    def is_agent_training(self, environment, agent_key):
+        return TrainingManager.is_agent_training(environment, agent_key)
+
+    def resume_agent_training(self, environment, agent_key):
+        TrainingManager.resume_agent_training(environment, self, self._agents[environment][agent_key], lambda agent: self.agent_updated.emit(environment, agent_key))
+
+    def play_agent(self, environment, agent_key):
+        self.get_agent(environment, agent_key).play()
+        self.agent_updated.emit(environment, agent_key)
+
+    def pause_agent(self, environment, agent_key):
+        self.get_agent(environment, agent_key).pause()
+        self.agent_updated.emit(environment, agent_key)

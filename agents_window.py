@@ -195,6 +195,9 @@ class AgentsWindow(QMainWindow):
     def update_agent_on_gui(self, environment, agent_key):
         agent = self._agents_model.get_agent(environment, agent_key)
 
+        if agent is None:
+            return
+
         label_loading = self.ui.environments_tabs.findChild(QWidget, environment + self.sep + "env_tab_widget").\
             findChild(QLabel, environment + self.sep + agent_key + self.sep + "label_loading")
 
@@ -215,7 +218,9 @@ class AgentsWindow(QMainWindow):
 
         # TODO: to fix deletion
         for i in reversed(range(row.layout().count())):
-            row.layout().itemAt(i).widget().setParent(None)
+            w = row.layout().itemAt(i).widget()
+            if w is not None:
+                w.setParent(None)
         scroll_area_content_layout.removeWidget(row)
 
         self.agents_number[environment] -= 1
