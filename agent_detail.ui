@@ -90,7 +90,7 @@
          </spacer>
         </item>
         <item row="1" column="2">
-         <widget class="QSlider" name="SliderTraining">
+         <widget class="QSlider" name="sliderTraining">
           <property name="sizePolicy">
            <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
             <horstretch>0</horstretch>

@@ -39,11 +39,11 @@ class AgentDetailWindow(QMainWindow):
 
         # ProgressBar & Slider
         self.ui.progressBarTraining.setFixedWidth(200)
-        self.ui.SliderTraining.setFixedWidth(200)
-        self.ui.SliderTraining.setMaximum(episodes/num_checkpoints)
+        self.ui.sliderTraining.setFixedWidth(200)
+        self.ui.sliderTraining.setMaximum(episodes / num_checkpoints)
 
-        self.ui.SliderTraining.setVisible(False) if self.agent.running else self.ui.SliderTraining.setVisible(True)
-        self.ui.SliderTraining.valueChanged.connect(self.sliderChanged)
+        self.ui.sliderTraining.setVisible(False) if self.agent.running else self.ui.sliderTraining.setVisible(True)
+        self.ui.sliderTraining.valueChanged.connect(self.sliderChanged)
 
         self.setWindowTitle(agent_key)
         self.ui.txt_name.setText(self.agent.name)
@@ -80,6 +80,7 @@ class AgentDetailWindow(QMainWindow):
                 self.ui.labelStatus.setText("Status: training completed")
                 self.ui.progressBarTraining.setEnabled(False)
                 self.ui.btnPlayPause.setVisible(False)
+                self.ui.sliderTraining.setVisible(True)
             else:
                 self.ui.labelStatus.setText("Status: paused")
                 self.ui.progressBarTraining.setEnabled(True)
@@ -116,10 +117,10 @@ class AgentDetailWindow(QMainWindow):
         if self.agents_model.is_agent_training(self.environment, self.agent_key):
             if not self.agent.running:
                 self.agents_model.play_agent(self.environment, self.agent_key)
-                self.ui.SliderTraining.setVisible(False)
+                self.ui.sliderTraining.setVisible(False)
             else:
                 self.agents_model.pause_agent(self.environment, self.agent_key)
-                self.ui.SliderTraining.setVisible(True)
+                self.ui.sliderTraining.setVisible(True)
         else:
             self.agents_model.resume_agent_training(self.environment, self.agent_key)
 
@@ -135,7 +136,7 @@ class AgentDetailWindow(QMainWindow):
     def sliderChanged(self):
         # print('sliderChanged')
 
-        s_val = self.ui.SliderTraining.value()
+        s_val = self.ui.sliderTraining.value()
         # self.setCursor(QtGui.QCursor(QtCore.Qt.PointingHandCursor))
 
         policy_name = policies_dir()
@@ -144,7 +145,7 @@ class AgentDetailWindow(QMainWindow):
         # new value is bigger than max value
         if s_val > int(max(policies) / num_checkpoints):
             s_val = int(max(policies) / num_checkpoints)
-            self.ui.SliderTraining.setValue(s_val)
+            self.ui.sliderTraining.setValue(s_val)
         self.game_thread.interrupt()
         policy_net = os.path.join(policy_name, self.environment, self.agent_key,
                                   'policy_net-' + str(s_val * num_checkpoints) + '.pth')
