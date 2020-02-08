@@ -156,13 +156,16 @@ class AgentsModel(QObject):
             print("File not found: " + trained_reward_info)
             return None
 
-    def load_agent(self, environment: str, agent_key: str):
+    def load_agent(self, environment: str, agent_key: str, num: int = None):
         agent_dir = os.path.join(self.agents_dir, environment, agent_key)
 
         # module_path, _ = policy_net_file.rsplit(".", 1)
         # net_module = importlib.import_module(".".join(os.path.split(module_path)))
         # reward_net = net_module.get_net(get_input_shape(), get_num_actions(), environment, agent_key, folder=agent_dir).to(self.device)
-        agent = pickle.load(open(os.path.join(agent_dir, "net.pkl"), "rb")).to(self.device).load_last_checkpoint()
+        if num is None:
+            agent = pickle.load(open(os.path.join(agent_dir, "net.pkl"), "rb")).to(self.device).load_last_checkpoint()
+        else:
+            agent = pickle.load(open(os.path.join(agent_dir, "net.pkl"), "rb")).to(self.device).load_checkpoint(num)
         return agent
 
     # TODO change

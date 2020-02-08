@@ -20,6 +20,16 @@ def games_dir():
     return "games"
 
 
+# number of episodes for policy training
+def num_episodes():
+    return 300
+
+
+# numbers of episodes between each checkpoint
+def get_episodes_for_checkpoint():
+    return 50
+
+
 def conv_output_size(input_size, filter_size, padding=0, stride=1):
     # formula for output dimension:
     # O = (D -K +2P)/S + 1

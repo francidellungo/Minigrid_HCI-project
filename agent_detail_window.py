@@ -1,11 +1,10 @@
 import os
 import time
 from threading import Thread
-
 from itertools import cycle
 import gym
 import gym_minigrid
-from PyQt5 import QtGui
+from PyQt5 import QtGui, QtCore
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QMovie, QPixmap, QImage
 from PyQt5.QtWidgets import QMainWindow, QMessageBox, QHBoxLayout, QLabel, QPushButton, QWidget, QStyle, QSlider
@@ -13,9 +12,11 @@ from PyQt5.QtWidgets import QMainWindow, QMessageBox, QHBoxLayout, QLabel, QPush
 from agent_detail_ui import Ui_Agent
 from games_model import GamesModel
 from games_view import GamesListView
-from utils import nparray_to_qpixmap, state_filter
-
+from utils import nparray_to_qpixmap, state_filter, load_net, policies_dir, get_episodes_for_checkpoint, num_episodes
 games_path = 'games'
+
+episodes = num_episodes()
+num_checkpoints = get_episodes_for_checkpoint()
 
 
 class AgentDetailWindow(QMainWindow):
@@ -36,12 +37,10 @@ class AgentDetailWindow(QMainWindow):
         # ProgressBar & Slider
         self.ui.progressBarTraining.setFixedWidth(200)
         self.ui.SliderTraining.setFixedWidth(200)
+        self.ui.SliderTraining.setMaximum(episodes/num_checkpoints)
 
         self.ui.SliderTraining.setVisible(False) if self.agent.running else self.ui.SliderTraining.setVisible(True)
-
-        # self.ui.SliderTraining.setMaximum(10)
-        # self.ui.SliderTraining.setTickInterval(1)
-        # self.ui.SliderTraining.setValue(2)
+        self.ui.SliderTraining.valueChanged.connect(self.sliderChanged)
 
         self.setWindowTitle(agent_key)
         self.ui.txt_name.setText(self.agent.name)
@@ -115,9 +114,31 @@ class AgentDetailWindow(QMainWindow):
             self.ui.SliderTraining.setVisible(True)
         else:
             self.agent.play()
+            # if self.playing_game is not None and self.playing_game._running:
+            #     self.playing_game.interrupt()
             self.ui.SliderTraining.setVisible(False)
 
         self.refresh_training_status()
+
+    def sliderChanged(self):
+        # print('sliderChanged')
+
+        s_val = self.ui.SliderTraining.value()
+        # self.setCursor(QtGui.QCursor(QtCore.Qt.PointingHandCursor))
+
+        policy_name = policies_dir()
+        policies = [int(el.split('-')[1].split('.')[0]) for el in os.listdir(os.path.join(policy_name, self.environment, self.agent_key)) if el.endswith('.pth')]
+
+        # new value is bigger than max value
+        if s_val > int(max(policies) / num_checkpoints):
+            s_val = int(max(policies) / num_checkpoints)
+            self.ui.SliderTraining.setValue(s_val)
+        self.game_thread.interrupt()
+        policy_net = os.path.join(policy_name, self.environment, self.agent_key,
+                                  'policy_net-' + str(s_val * num_checkpoints) + '.pth')
+        self.playing_agent = load_net(policy_net)
+        self.game_thread = GameThread(self.playing_agent, self.environment, self.ui.labelGame)
+        self.game_thread.start()
 
 
 class GameThread(Thread):

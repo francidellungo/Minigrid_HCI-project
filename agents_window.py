@@ -213,6 +213,7 @@ class AgentsWindow(QMainWindow):
         scroll_area_content_layout = env_tab_widget.findChild(QLayout, environment + self.sep + "scroll_area_content_layout")
         row = env_tab_widget.findChild(QWidget, environment + self.sep + agent_key + self.sep + "row")
 
+        # TODO: to fix deletion
         for i in reversed(range(row.layout().count())):
             row.layout().itemAt(i).widget().setParent(None)
         scroll_area_content_layout.removeWidget(row)
