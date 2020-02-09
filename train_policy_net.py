@@ -19,7 +19,7 @@ default_env = "MiniGrid-Empty-6x6-v0"
 default_policy = "policy_nets/emb_onehot_conv1x1_mlp_policy.py"
 
 
-def train_policy(env_name, policy_net=default_policy, reward_net_arg=None, policy_net_key=None, callbacks=[], max_episodes=num_episodes(), render=False, device=auto_device()):
+def train_policy(env_name, policy_net=default_policy, reward_net_arg=None, policy_net_key=None, callbacks=[], max_episodes=num_max_episodes(), render=False, device=auto_device(), episodes_for_checkpoint=get_episodes_for_checkpoint()):
 
     args_log = {"env_name": env_name, "policy": policy_net, "reward": reward_net_arg}
 
@@ -54,7 +54,7 @@ def train_policy(env_name, policy_net=default_policy, reward_net_arg=None, polic
         policy_net = load_net(policy_net, device=device)
 
     policy_net.fit(episodes=max_episodes, reward_loader=lambda: load_net(reward_net_arg, True, device), autosave=True,
-                   episodes_for_checkpoint=get_episodes_for_checkpoint(), reward_net_key=get_reward_key(reward_net_arg),
+                   episodes_for_checkpoint=episodes_for_checkpoint, reward_net_key=get_reward_key(reward_net_arg),
                    reward_net_games=get_reward_games(reward_net_arg), callbacks=callbacks, render=render)
 
     # # save trained policy_net net

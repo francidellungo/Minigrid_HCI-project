@@ -182,7 +182,7 @@ class PolicyNet(nn.Module):
 
             # check if I have to save the net weights in this episode
             if autosave:
-                if (self.episode == 0 or episodes_for_checkpoint is not None and self.episode % episodes_for_checkpoint == 0) or self.episode==self.max_episodes-1:
+                if self.episode == 0 or (episodes_for_checkpoint is not None and self.episode % episodes_for_checkpoint == 0) or self.episode==self.max_episodes-1:
                     # save net weights
                     self.save_checkpoint()
 

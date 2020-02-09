@@ -15,11 +15,7 @@ from games_view import GamesListView
 from trainer import TrainingManager
 # from utils import nparray_to_qpixmap, state_filter
 
-from utils import nparray_to_qpixmap, state_filter, load_net, policies_dir, get_episodes_for_checkpoint, num_episodes
-games_path = 'games'
-
-episodes = num_episodes()
-num_checkpoints = get_episodes_for_checkpoint()
+from utils import nparray_to_qpixmap, state_filter, load_net, policies_dir, get_episodes_for_checkpoint, num_max_episodes
 
 
 class AgentDetailWindow(QMainWindow):
@@ -39,9 +35,9 @@ class AgentDetailWindow(QMainWindow):
 
         # ProgressBar & Slider
         self.ui.progressBarTraining.setFixedWidth(200)
+        self.ui.progressBarTraining.setMinimum(0)
         self.ui.SliderTraining.setFixedWidth(200)
-        self.ui.SliderTraining.setMaximum(episodes/num_checkpoints)
-
+        self.ui.SliderTraining.setMaximum(num_max_episodes()/get_episodes_for_checkpoint())
         self.ui.SliderTraining.setVisible(False) if self.agent.running else self.ui.SliderTraining.setVisible(True)
         self.ui.SliderTraining.valueChanged.connect(self.sliderChanged)
 
@@ -87,6 +83,7 @@ class AgentDetailWindow(QMainWindow):
                 self.ui.btnPlayPause.setIcon(self.style().standardIcon(QStyle.SP_MediaPlay))
                 self.ui.btnPlayPause.setVisible(True)
                 self.ui.SliderTraining.setVisible(True)
+                self.ui.SliderTraining.setValue(num_max_episodes()//get_episodes_for_checkpoint())
 
         else:
             self.ui.labelStatus.setText("Status: training")
@@ -101,8 +98,8 @@ class AgentDetailWindow(QMainWindow):
             if self.agent != self.game_thread.agent:
                 self.game_thread.set_agent(self.agent)
 
-        self.ui.progressBarTraining.setMaximum(max_episodes)
-        self.ui.progressBarTraining.setValue(current_episode+1)
+        self.ui.progressBarTraining.setMaximum(max_episodes-1)
+        self.ui.progressBarTraining.setValue(current_episode)
 
     def closeEvent(self, a0: QtGui.QCloseEvent) -> None:
         self.game_thread.interrupt()
@@ -138,7 +135,7 @@ class AgentDetailWindow(QMainWindow):
         self.refresh_training_status()
 
     def sliderChanged(self):
-        # print('sliderChanged')
+        episodes_for_checkpoint = get_episodes_for_checkpoint()
 
         s_val = self.ui.SliderTraining.value()
         # self.setCursor(QtGui.QCursor(QtCore.Qt.PointingHandCursor))
@@ -147,11 +144,11 @@ class AgentDetailWindow(QMainWindow):
         policies = [int(el.split('-')[1].split('.')[0]) for el in os.listdir(os.path.join(policy_name, self.environment, self.agent_key)) if el.endswith('.pth')]
 
         # new value is bigger than max value
-        if s_val > int(max(policies) / num_checkpoints):
-            s_val = int(max(policies) / num_checkpoints)
+        if s_val > int(max(policies) / episodes_for_checkpoint):
+            s_val = int(max(policies) / episodes_for_checkpoint)
             self.ui.SliderTraining.setValue(s_val)
 
-        policy_net = os.path.join(policy_name, self.environment, self.agent_key, 'policy_net-' + str(s_val * num_checkpoints) + '.pth')
+        policy_net = os.path.join(policy_name, self.environment, self.agent_key, 'policy_net-' + str(s_val * episodes_for_checkpoint) + '.pth')
         new_agent = load_net(policy_net)
         if new_agent.episode != self.game_thread.agent:
             self.game_thread.set_agent(new_agent)

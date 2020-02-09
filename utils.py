@@ -21,8 +21,8 @@ def games_dir():
 
 
 # number of episodes for policy training
-def num_episodes():
-    return 300
+def num_max_episodes():
+    return 301
 
 
 # numbers of episodes between each checkpoint
