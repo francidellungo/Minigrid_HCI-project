@@ -77,6 +77,7 @@ class AgentDetailWindow(QMainWindow):
                 self.ui.progressBarTraining.setEnabled(False)
                 self.ui.btnPlayPause.setVisible(False)
                 self.ui.SliderTraining.setVisible(True)
+                self.ui.SliderTraining.setValue(num_max_episodes()//get_episodes_for_checkpoint())
             else:
                 self.ui.labelStatus.setText("Status: paused")
                 self.ui.progressBarTraining.setEnabled(True)
