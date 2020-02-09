@@ -4,6 +4,7 @@ from datetime import datetime
 import json
 import os
 import shutil
+from threading import Semaphore
 
 import torch
 from PyQt5.QtCore import QObject, pyqtSignal, pyqtSlot, pyqtProperty
@@ -31,6 +32,7 @@ class AgentsModel(QObject):
         self.rewards_dir = rewards_dir()
         self.games_dir = games_dir()
         self.device = auto_device()
+        self.locks = {}
         self.load_from_disk()
 
     def load_from_disk(self):
@@ -107,17 +109,21 @@ class AgentsModel(QObject):
 
         self._agents[environment][agent_key] = agent
         self.agent_added.emit(environment, agent_key)
+
+        self.locks[agent] = Semaphore(1)
+
         return True
 
     def delete_agent(self, environment: str, agent_key: str) -> bool:
         if environment not in self._agents or agent_key not in self._agents[environment]:
             return False
+        if TrainingManager.is_agent_training(environment, agent_key):
+            TrainingManager.interrupt_training(self, environment, agent_key)
+
         agent = self._agents[environment].pop(agent_key)
         shutil.rmtree(agent.folder, ignore_errors=True)
         self._delete_agent_games(environment, agent)
         self.agent_deleted.emit(environment, agent_key)
-        if TrainingManager.is_agent_training(environment, agent_key):
-            TrainingManager.interrupt_training(environment, agent_key)
         return True
 
     def _delete_agent_games(self, environment, agent):
@@ -196,9 +202,17 @@ class AgentsModel(QObject):
         TrainingManager.resume_agent_training(environment, self, self._agents[environment][agent_key], lambda agent: self.agent_updated.emit(environment, agent_key))
 
     def play_agent(self, environment, agent_key):
+        self.locks[self._agents[environment][agent_key]].release()
         self.get_agent(environment, agent_key).play()
         self.agent_updated.emit(environment, agent_key)
 
     def pause_agent(self, environment, agent_key):
+        self.locks[self._agents[environment][agent_key]].acquire()
         self.get_agent(environment, agent_key).pause()
         self.agent_updated.emit(environment, agent_key)
+
+    def get_agent_lock(self, environment, agent_key):
+        agent = self.get_agent(environment, agent_key)
+        if agent is None:
+            return Semaphore(1)
+        return self.locks[agent]

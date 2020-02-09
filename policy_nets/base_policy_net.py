@@ -137,8 +137,9 @@ class PolicyNet(nn.Module):
             batch_avg_true_return += sum(true_rewards)
             batch_avg_length += length
 
-            while not self.running:  # active wait TODO change
-                pass
+            for callback in callbacks:
+                if "before_update" in callback:
+                    callback["before_update"](self)
 
             # if this is the last episode of the batch
             if self.episode % batch_size == batch_size-1:
@@ -181,7 +182,7 @@ class PolicyNet(nn.Module):
 
             # check if I have to save the net weights in this episode
             if autosave:
-                if (self.episode == 0 or episodes_for_checkpoint is not None and self.episode % episodes_for_checkpoint == 0) or self.episode==self.max_episodes-1:
+                if self.episode == 0 or (episodes_for_checkpoint is not None and self.episode % episodes_for_checkpoint == 0) or self.episode==self.max_episodes-1:
                     # save net weights
                     self.save_checkpoint()
 
@@ -191,9 +192,6 @@ class PolicyNet(nn.Module):
 
             if self.interrupted:
                 break
-
-            while not self.running:  # active wait TODO change
-                pass
 
         self.running = False
 

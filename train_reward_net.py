@@ -12,7 +12,7 @@ from reward_nets.base_reward_net import RewardNet
 from utils import get_input_shape
 
 default_env = 'MiniGrid-Empty-6x6-v0'
-default_reward = "reward_nets/conv_reward.py"
+default_reward = "reward_nets/emb_onehot_conv1x1_mlp_reward.py"
 
 
 def split(my_list, split_fraction):

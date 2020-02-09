@@ -14,9 +14,10 @@ class TrainingManager:
     def train_new_agent(environment, games, agents_model, on_episode_end):
         policy_callbacks = [{
             "on_train_begin": lambda agent: agents_model.add_agent(environment, agent.key, agent),
+            "before_update": lambda agent: (agents_model.get_agent_lock(environment, agent.key).acquire(), agents_model.get_agent_lock(environment, agent.key).release()),
             "on_episode_end": on_episode_end,
             "on_train_end": lambda agent: th in TrainingManager.threads and TrainingManager.threads.remove(th)
-        }]
+        }] + [{"on_episode_end": lambda agent: (agents_model.get_agent_lock(environment, agent.key).acquire(), agents_model.get_agent_lock(environment, agent.key).release())}]
         th = PolicyTrainerThread(environment, games, policy_callbacks, train_reward_also=True)
         TrainingManager.threads.append(th)
         th.start()
@@ -25,9 +26,10 @@ class TrainingManager:
     def resume_agent_training(environment, agents_model, agent, on_episode_end):
         policy_callbacks = [{
             "on_train_begin": lambda agent: agents_model.agent_updated.emit(environment, agent.key),
+            "before_update": lambda agent: (agents_model.get_agent_lock(environment, agent.key).acquire(), agents_model.get_agent_lock(environment, agent.key).release()),
             "on_episode_end": on_episode_end,
             "on_train_end": lambda agent: TrainingManager.threads.remove(th)
-        }]
+        }] + [{"on_episode_end": lambda agent: (agents_model.get_agent_lock(environment, agent.key).acquire(), agents_model.get_agent_lock(environment, agent.key).release())}]
         th = PolicyTrainerThread(environment, policy_callbacks=policy_callbacks, train_reward_also=False, policy=agent, policy_net_key=agent.key)
         TrainingManager.threads.append(th)
         th.start()
@@ -37,7 +39,7 @@ class TrainingManager:
         return any([th.environment == environment and th.policy_net_key == agent_key for th in TrainingManager.threads])
 
     @staticmethod
-    def interrupt_training(environment, agent_key):
+    def interrupt_training(agents_model, environment, agent_key):
         toRemove = -1
         for i, th in enumerate(TrainingManager.threads):
             if th.environment == environment and th.policy_net_key == agent_key:
@@ -46,6 +48,7 @@ class TrainingManager:
 
         if toRemove != -1:
             TrainingManager.threads[toRemove].interrupt()
+            agents_model.get_agent_lock(environment, agent_key).release()
             TrainingManager.threads.pop(toRemove)
 
     @staticmethod
