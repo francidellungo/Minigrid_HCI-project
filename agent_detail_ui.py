@@ -185,7 +185,7 @@ class Ui_Agent(object):
         Agent.setWindowTitle(_translate("Agent", "MainWindow"))
         self.labelStatus.setText(_translate("Agent", "Status: training"))
         self.labelLoading.setText(_translate("Agent", "x"))
-        self.progressBarTraining.setFormat(_translate("Agent", "%v/%m"))
+        self.progressBarTraining.setFormat(_translate("Agent", "%p%"))
         self.label.setText(_translate("Agent", "Name:"))
         self.btnDeleteAgent.setText(_translate("Agent", "Delete agent"))
         self.list_title_label.setText(_translate("Agent", "Games used for training"))
