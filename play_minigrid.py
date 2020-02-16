@@ -273,6 +273,9 @@ class Game:
         output += "\nenv_normalized_rewards: " + str(rounded_list(normalize(self.env_rewards)))
         if self.reward_net is not None:
             output += "\nnet_normalized_rewards: " + str(rounded_list(normalize(self.net_rewards)))
+        output += "\nenv_standardized_rewards: " + str(rounded_list(standardize(self.env_rewards)))
+        if self.reward_net is not None:
+            output += "\nnet_standardized_rewards: " + str(rounded_list(standardize(self.net_rewards)))
         print(output)
 
     def print_discounted_rewards(self):
@@ -284,6 +287,9 @@ class Game:
         output += "\nenv_normalized_discounted_rewards: " + str(rounded_list(normalize(env_discounted_rewards)))
         if self.reward_net is not None:
             output += "\nnet_normalized_discounted_rewards: " + str(rounded_list(normalize(net_discounted_rewards)))
+        output += "\nenv_standardized_discounted_rewards: " + str(rounded_list(standardize(env_discounted_rewards)))
+        if self.reward_net is not None:
+            output += "\nnet_standardized_discounted_rewards: " + str(rounded_list(standardize(net_discounted_rewards)))
         print(output)
 
 

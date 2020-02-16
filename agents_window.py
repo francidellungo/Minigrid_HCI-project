@@ -84,7 +84,7 @@ class AgentsWindow(QMainWindow):
         self.ui.btn_create.setVisible(envs_exist)
 
     def ask_for_new_environment(self):
-        items = get_all_environments() - self._agents_model.get_environments()
+        items = sorted(get_all_environments() - self._agents_model.get_environments())
         env, ok = QInputDialog.getItem(self, "Select an environment to add", "Environment:", items, editable=False)
         if ok:
             self._agents_model.add_environment(env)
