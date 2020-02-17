@@ -54,6 +54,7 @@ class PolicyNet(nn.Module):
 
         self.interrupted = False
         self.running = False
+        self.standardizer = Standardizer(0.999)
 
     @abstractmethod
     def forward(self, x):
@@ -62,7 +63,7 @@ class PolicyNet(nn.Module):
     def current_device(self):
         return next(self.parameters()).device
 
-    def fit(self, episodes=100, batch_size=4, reward_loader=lambda:..., render=False, autosave=False, episodes_for_checkpoint=None, reward_net_key=None, reward_net_games=None,callbacks=[]):
+    def fit(self, episodes=100, batch_size=4, reward_loader=lambda:..., render=False, autosave=False, episodes_for_checkpoint=None, reward_net_key=None, reward_net_games=None, callbacks=[]):
         self.max_episodes = self.episode + episodes
 
         # TODO vedere se c'è verso prenderli dalla reward net invece che come parametro
@@ -247,6 +248,8 @@ class PolicyNet(nn.Module):
 
             #rewards = standardize(rewards)
             #rewards = normalize(rewards)
+            #rewards = self.standardizer.standardize(rewards)
+
             discounted_rewards = PolicyNet.compute_discounted_rewards(rewards, gamma)
             #discounted_rewards = standardize(PolicyNet.compute_discounted_rewards(rewards, gamma))
             #discounted_rewards = normalize(PolicyNet.compute_discounted_rewards(rewards, gamma))

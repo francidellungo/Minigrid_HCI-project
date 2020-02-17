@@ -61,6 +61,12 @@ class Game:
             self.thread = Thread(target=self._autoplay)
             self.thread.start()
 
+        mem = 0.99
+        self.env_standardizer = Standardizer(mem)
+        self.net_standardizer = Standardizer(mem)
+        self.env_disc_standardizer = Standardizer(mem)
+        self.net_disc_standardizer = Standardizer(mem)
+
     def refresh_gui(self, np_array):
         pass
 
@@ -276,6 +282,9 @@ class Game:
         output += "\nenv_standardized_rewards: " + str(rounded_list(standardize(self.env_rewards)))
         if self.reward_net is not None:
             output += "\nnet_standardized_rewards: " + str(rounded_list(standardize(self.net_rewards)))
+        output += "\nenv_standardized_rewards_with_memory: " + str(rounded_list(self.env_standardizer.standardize(self.env_rewards)))
+        if self.reward_net is not None:
+            output += "\nnet_standardized_rewards_with_memory: " + str(rounded_list(self.net_standardizer.standardize(self.net_rewards)))
         print(output)
 
     def print_discounted_rewards(self):
@@ -290,6 +299,9 @@ class Game:
         output += "\nenv_standardized_discounted_rewards: " + str(rounded_list(standardize(env_discounted_rewards)))
         if self.reward_net is not None:
             output += "\nnet_standardized_discounted_rewards: " + str(rounded_list(standardize(net_discounted_rewards)))
+        output += "\nenv_standardized_discounted_rewards_with_memory: " + str(rounded_list(self.env_disc_standardizer.standardize(env_discounted_rewards)))
+        if self.reward_net is not None:
+            output += "\nnet_standardized_discounted_rewards_with_memory: " + str(rounded_list(self.net_disc_standardizer.standardize(net_discounted_rewards)))
         print(output)
 
 
