@@ -22,7 +22,7 @@ def games_dir():
 
 # number of episodes for policy training
 def num_max_episodes():
-    return 301
+    return 801
 
 
 # numbers of episodes between each checkpoint
@@ -86,7 +86,7 @@ def print_state(state, flip=True):
 
 
 def get_num_actions():
-    return 3
+    return 7
 
 
 def get_all_environments():

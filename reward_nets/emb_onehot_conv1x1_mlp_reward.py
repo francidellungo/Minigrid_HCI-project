@@ -28,10 +28,10 @@ class EmbMlpRewardNet(RewardNet):
         self.affine1 = nn.Linear(num_conv_filters * np.prod(input_shape[1:]), num_hidden_units)
         self.affine2 = nn.Linear(num_hidden_units + 1, 1)
 
-        self.optimizer = optim.Adam(self.parameters(), lr=10 ** -3)
-        self.scheduler_kwargs = {"factor": 0.2, "patience": 10, "min_lr": 5 * 10 ** -5}
-        self.scheduler = ReduceLROnPlateau(self.optimizer, 'max', **self.scheduler_kwargs)
-        self.lambda_abs_rewards = 10 ** -4  # penalty for rewards regularization
+        self.optimizer = optim.Adam(self.parameters(), lr=10 ** -4)
+        # self.scheduler_kwargs = {"factor": 0.2, "patience": 10, "min_lr": 5 * 10 ** -5}
+        # self.scheduler = ReduceLROnPlateau(self.optimizer, 'max', **self.scheduler_kwargs)
+        self.lambda_abs_rewards = 0#10 ** -4  # penalty for rewards regularization
 
     def forward(self, x, steps=None):
         x = x.view(-1, *self.input_shape).long()

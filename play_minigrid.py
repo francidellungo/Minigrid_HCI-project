@@ -266,7 +266,7 @@ class Game:
         self.tot_env_reward += env_reward
         output = 'step=%s\nenv_reward=%.2f, tot_env_reward=%.2f' % (self.env.step_count, env_reward, self.tot_env_reward)
         if self.reward_net is not None:
-            net_reward = self.reward_net(state_filter(obs)).item()
+            net_reward = self.reward_net(state_filter(obs), torch.tensor([self.env.step_count])).item()
             self.net_rewards.append(net_reward)
             self.tot_net_reward += net_reward
             output += '\nnet_reward=%.2f, tot_net_reward=%.2f' % (net_reward, self.tot_net_reward)

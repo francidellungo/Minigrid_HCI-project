@@ -121,13 +121,6 @@ class RewardNet(nn.Module):
 
         # TODO ha senso che subtrajectory_length invece di una costante sia un range entro il quale scegliere a random la lunghezza della sottotraiettoria?
         # TODO bisogna capire quale è un buon modo per scegliere tutti questi iperparametri delle sottotraiettorie
-
-        # # queste righe sotto commentate (e le righe commentate in cima al for) sono un tentativo di sfruttare meglio la potenza di calcolo della GPU, ma per ora non sembrano avere una particolare influenza
-        # t_lens = []
-        # for trajectory in X_train:
-        #     t_lens.append(len(trajectory))
-        #
-        # X_train = torch.cat([trajectory for trajectory in X_train])
         
         for callback in callbacks:
             if "on_train_begin" in callback:
@@ -140,16 +133,6 @@ class RewardNet(nn.Module):
             ''' forward pass on the whole training set '''
             # give a score to each train trajectory
             train_trajectories_scores = self.calculate_trajectories_scores(X_train)
-            # for efficiency reasons, for each trajectory I do the forward pass only once an epoch
-            # then, to compare different trajectories/subtrajectories, I can use the scores just calculated
-
-            # TODO queste righe sotto commentate (e le righe prima del for) sono un tentativo di sfruttare meglio la potenza di calcolo della GPU, ma per ora non sembrano avere una particolare influenza
-            # scores = self(X_train)
-            # train_trajectories_scores = []
-            # begin = 0
-            # for t_len in t_lens:
-            #     train_trajectories_scores.append(scores[begin:begin+t_len])
-            #     begin += t_len
 
             ''' prepare pairs of trajectories scores for loss calculation '''
             pairs = []          # needed for T-REX loss
@@ -171,16 +154,17 @@ class RewardNet(nn.Module):
                     abs_rewards.append([sum(train_trajectories_scores[i].abs()), sum(train_trajectories_scores[j].abs())])
 
                     # queste due righe sotto sono per le traiettorie complete con padding
-                    # li = len(train_trajectories_scores[i])
-                    # lj = len(train_trajectories_scores[j])
-                    # pi = RewardNet.pad_trajectory(train_trajectories_scores[i], lj - li)
-                    # pj = RewardNet.pad_trajectory(train_trajectories_scores[j], li - lj)
-                    # pairs.append([sum(pi), sum(pj)])
-                    # abs_rewards.append([sum(pi.abs()), sum(pj.abs())])
+                    li = len(train_trajectories_scores[i])
+                    lj = len(train_trajectories_scores[j])
+                    if li > lj:
+                        pi = train_trajectories_scores[i]
+                        pj = RewardNet.pad_trajectory(train_trajectories_scores[j], li - lj)
+                        pairs.append([sum(pi), sum(pj)])
+                        abs_rewards.append([sum(pi.abs()), sum(pj.abs())])
 
             ''' shuffle pairs and make mini batches'''
             # random permute pairs
-            permutation = torch.randperm(len(pairs))
+            permutation = torch.randperm(len(pairs)).tolist()
             pairs = [pairs[p] for p in permutation]
             abs_rewards = [abs_rewards[p] for p in permutation]
 
