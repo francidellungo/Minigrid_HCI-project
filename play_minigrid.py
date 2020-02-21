@@ -1,6 +1,7 @@
 import json
 import sys
 import time
+from random import randint
 from threading import Thread
 
 import torch
@@ -90,6 +91,8 @@ class Game:
         if self.seed != -1:
             self.env.seed(self.seed)
             print("seed {} set".format(self.seed))
+        else:
+            self.env.seed(randint(0, 1000000))
 
         self.obs = self.env.reset()
         self.tot_env_reward = 0
