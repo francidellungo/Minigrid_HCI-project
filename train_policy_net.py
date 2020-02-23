@@ -49,7 +49,7 @@ def train_policy(env_name, policy_net=default_policy, reward_net_arg=None, polic
         with open(os.path.join(output_dir, "args.json"), "wt") as file:
             json.dump(args_log, file)
 
-        policy_net = net_module.get_net(get_input_shape(), get_num_actions(), env, policy_net_key, folder=output_dir).to(device)
+        policy_net = net_module.get_net(get_input_shape(), get_num_actions(env_name), env, policy_net_key, folder=output_dir).to(device)
     else:
         policy_net = load_net(policy_net, device=device)
 

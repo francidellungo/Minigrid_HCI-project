@@ -22,12 +22,12 @@ def games_dir():
 
 # number of episodes for policy training
 def num_max_episodes():
-    return 801
+    return 5001
 
 
 # numbers of episodes between each checkpoint
 def get_episodes_for_checkpoint():
-    return 50
+    return 100
 
 
 def conv_output_size(input_size, filter_size, padding=0, stride=1):
@@ -85,7 +85,11 @@ def print_state(state, flip=True):
         print(colored(obs_channel_i, color))
 
 
-def get_num_actions():
+def get_num_actions(env_name):
+    if 'Empty' in env_name:
+        # print('env_name', env_name, ' ---> 3 ACTIONS')
+        return 3
+    # print('env_name', env_name, ' ---> 7 ACTIONS')
     return 7
 
 

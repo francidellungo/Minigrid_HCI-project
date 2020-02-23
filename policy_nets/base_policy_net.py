@@ -31,7 +31,7 @@ class PolicyNet(nn.Module):
     @staticmethod
     def loss(actions_logits, action, discounted_reward):
         distribution = Categorical(logits=actions_logits)
-        return (-distribution.log_prob(action) * discounted_reward).view(-1)# - (distribution.entropy() * (10 ** -2))  # TODO questo iperparametro va messo in un altro modo
+        return (-distribution.log_prob(action) * discounted_reward).view(-1)  # - (distribution.entropy() * (10 ** -2))  # TODO questo iperparametro va messo in un altro modo
 
     @abstractmethod
     def __init__(self, input_shape, num_actions, env, key=None, folder=None, episode_to_load=None):
