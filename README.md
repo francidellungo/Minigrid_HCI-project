@@ -6,6 +6,10 @@ The IRL algorithms are based on the following paper:
 *Extrapolating Beyond Suboptimal Demonstrations via Inverse Reinforcement Learning from Observations*
 https://arxiv.org/pdf/1904.06387.pdf
 
+## GUI
+![Alt Text](./figures/agents.png "All the created agents")
+
+![](./figures/newAgent.png "Create a new agent")
 
 ## Run the project
 - go to the directory in which you have downloaded the project
