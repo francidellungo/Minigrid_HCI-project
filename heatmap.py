@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 import argparse
 from gym_minigrid.wrappers import *
 from utils import *
-
+from matplotlib.ticker import MultipleLocator, FormatStrFormatter
 
 def heatmap(data, ax=None, cbar_kw={}, cbarlabel="", **kwargs):
     """
@@ -58,6 +58,38 @@ def heatmap(data, ax=None, cbar_kw={}, cbarlabel="", **kwargs):
     ax.tick_params(which="minor", bottom=False, left=False)
 
     return im
+
+
+def draw_grid(reward):
+    fig = plt.figure()
+    ax = fig.add_subplot(1,1,1)
+
+    # Major ticks every 20, minor ticks every 5
+    major_ticks = np.arange(0, 28,2)
+    minor_ticks = np.arange(0, 28,2)
+
+    ax.set_xticks(major_ticks)
+    ax.set_xticks(minor_ticks, minor=True)
+    ax.set_yticks(major_ticks)
+    ax.set_yticks(minor_ticks, minor=True)
+
+    # And a corresponding grid
+    ax.grid(which='both')
+
+    for i in range(len(reward)):
+        for j in range(len(reward[0])):
+            # text = ax.text(j, i, str(round(reward[i, j], 2)) + str('\n') + directions[i, j][0], ha="center", va="center", color="b")
+            text = ax.text(j*2, i*2, directions[i, j][0], ha="center", va="center", color="c", weight='bold')
+
+    # Or if you want different settings for the grids:
+    # ax.grid(which='minor', alpha=3.2)
+    # ax.grid(which='major', alpha=0.5)
+
+    plt.show()
+
+    # fig, ax = plt.subplots()
+    # im = plt.grid(color='black', ax=ax, linestyle='-', linewidth=1)
+    # xdata, ydata = [i for i in range(0, len(reward))], [i for i in range(0, len(reward[0]))]
 
 
 def calculate_rewards(args_, env, agent_dir=None):
@@ -128,44 +160,8 @@ def calculate_rewards(args_, env, agent_dir=None):
 
 def draw_heatmap(reward, directions):
     fig, ax = plt.subplots()
-    # harvest = np.array([[2.8, 2.4, 2.5, 3.9, 0.0, 4.0, 0.0],
-    #                     [2.4, 0.0, 4.0, 1.0, 2.7, 0.0, 0.0],
-    #                     [1.1, 2.4, 0.8, 4.3, 1.9, 4.4, 6.0],
-    #                     [0.6, 0.0, 0.3, 0.0, 3.1, 0.0, 0.0],
-    #                     [0.7, 1.7, 0.6, 2.6, 2.2, 0.2, 0.0],
-    #                     [1.3, 1.2, 0.0, 0.0, 0.0, 3.2, 5.1],
-    #                     [0.1, 2.0, 0.0, 1.4, 0.0, 1.9, 2.3]])
-    #
-    # rewards = np.array([[1.47, 0.64, 1.18, 1.41],
-    #                     [1.2, 0.03, 0.1, 0.64],
-    #                     [0.6, 0.2, 0.1, 1.18],
-    #                     [1.42, 1.16, 0.58, 0.28]])
-    #
-    # rewards_down = np.array([[1.66, 0.22, -1.02, -2.46],
-    #                     [1.08, -0.18, -1.22, -2.41],
-    #                     [0.34, -0.6, -1.37, -2.15],
-    #                     [-0.25, -0.87, -1.31, 0.25]])
-    #
-    # rewards_up = np.array([[-2.26, -2.23, -2.09, -1.67],
-    #                     [-0.96, -1.06, -1.20, -1.12],
-    #                     [0.30, -0.3, -0.46, -0.59],
-    #                     [1.57, 0.93, 0.34, -0.20]])
-    #
-    # rew = np.array([[-1.197307825088501, -1.1243306398391724, -0.4638795256614685, -0.5922848582267761, 0.9193240404129028],
-    #                 [-1.0645592212677002, -2.2605128288269043, -1.197307825088501, -0.026105016469955444, 0.9193240404129028],
-    #                 [-1.0645592212677002, -1.0645592212677002, 0.9193240404129028, -0.026105016469955444, 0.9193240404129028],
-    #                 [-0.5922848582267761, 0.3383917212486267, -0.4638795256614685, 0.3383917212486267, 0.3383917212486267],
-    #                 [-0.5922848582267761, -0.5922848582267761, -1.1243306398391724, -0.5922848582267761, 1.5]])
-    #
-    # rewd = np.array([[-1.197307825088501, -2.0884687900543213, -0.4638795256614685, -1.674673080444336, -1.1243306398391724],
-    #                 [-0.5922848582267761, -0.4638795256614685, -0.026105016469955444, 0.3383917212486267, -1.1243306398391724],
-    #                 [-0.9579547643661499, -0.9579547643661499, -1.1243306398391724, 0.3383917212486267, -0.5922848582267761],
-    #                 [1.5741075277328491, -0.026105016469955444, 0.3383917212486267, -0.4638795256614685, -0.5922848582267761],
-    #                 [0.3383917212486267, 1.5741075277328491, 0.3383917212486267, 0.3383917212486267, 1.5]]
-    # )
 
     # reward = np.array([[-0.2, 0.39, 1.07, 1.59], [-0.71, -0.51, -0.1, 0.13], [-1.17, -1.27, -1.15, -1.16], [-1.63, -2.1, -2.29, -2.38]])
-
     im = heatmap(reward, ax=ax, cmap="YlGn", cbarlabel="reward")
 
     for i in range(len(reward)):
@@ -181,12 +177,9 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("-b", "--backend", help="Backend to use. Default: qt", default='qt', choices=['qt', 'plt'])
     parser.add_argument("-e", "--env", help="Gym environment to load. Default: MiniGrid-Empty-6x6-v0", default='MiniGrid-Empty-6x6-v0', choices=get_all_environments())
-    parser.add_argument("-s", "--seed", type=int, help="Random seed to generate the environment with", default=-1)
-    parser.add_argument("-g", "--games_dir", help="Directory where to save games. Default: games aren't saved", default=None)
+    # parser.add_argument("-d", "--figures_dir", help="Directory where to save figures. Default: figures aren't saved", default=None)
     parser.add_argument("-p", "--policy_net", help="Policy net to use as agent. Default: no policy_net, the game is the user", default=None)
     parser.add_argument("-r", "--reward_net", help="Reward net to evalute. Default: None", default=None)
-    parser.add_argument("-mg", "--max_games", help="Maximum number of games to play. Default: no limits", type=int, default=-1)
-    parser.add_argument("-wt", "--waiting_time", help="Policy waiting time (seconds) between moves. Default: 0", type=float, default=0)
 
     args = parser.parse_args()
 
@@ -195,7 +188,7 @@ if __name__ == "__main__":
     agent_direction = None
     net_rewards, directions = calculate_rewards(args, env, agent_direction)
     draw_heatmap(net_rewards, directions)
-
+    # draw_grid(net_rewards)
 
     """ 
     f
