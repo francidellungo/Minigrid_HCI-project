@@ -13,5 +13,5 @@ https://arxiv.org/pdf/1904.06387.pdf
 
 ## Run the project
 - go to the directory in which you have downloaded the project
-- go inside Minigrid_HCI-project folder with the command: *cd Minigrid_HCI-project*
-- run the application with the command *python agents_window.py*
+- go inside Minigrid_HCI-project folder with the command: `cd Minigrid_HCI-project`
+- run the application with the command `python agents_window.py`

@@ -37,6 +37,7 @@ class EmbMlpRewardNet(RewardNet):
         x = x.view(-1, *self.input_shape).long()
         batch_size = len(x)
 
+        steps = None
         if steps is None:
             steps = torch.zeros((batch_size, 1))
         assert len(steps) == batch_size
