@@ -60,13 +60,14 @@ def heatmap(data, ax=None, cbar_kw={}, cbarlabel="", **kwargs):
     return im
 
 
-def draw_grid(reward):
+def draw_grid(reward, directions):
     fig = plt.figure()
     ax = fig.add_subplot(1,1,1)
 
     # Major ticks every 20, minor ticks every 5
-    major_ticks = np.arange(0, 28,2)
-    minor_ticks = np.arange(0, 28,2)
+    axis = len(reward)*2 + 2
+    major_ticks = np.arange(0, axis, 2)
+    minor_ticks = np.arange(0, axis, 2)
 
     ax.set_xticks(major_ticks)
     ax.set_xticks(minor_ticks, minor=True)
@@ -75,21 +76,15 @@ def draw_grid(reward):
 
     # And a corresponding grid
     ax.grid(which='both')
+    plt.tick_params(axis='both', which='major', labelsize=5, bottom=False, left=False, labelbottom=False, labelleft=False)
 
     for i in range(len(reward)):
         for j in range(len(reward[0])):
-            # text = ax.text(j, i, str(round(reward[i, j], 2)) + str('\n') + directions[i, j][0], ha="center", va="center", color="b")
-            text = ax.text(j*2, i*2, directions[i, j][0], ha="center", va="center", color="c", weight='bold')
-
-    # Or if you want different settings for the grids:
-    # ax.grid(which='minor', alpha=3.2)
-    # ax.grid(which='major', alpha=0.5)
+            text = ax.text(j*2 + 1, i*2 + 1, directions[len(reward) - 1 - i, j][0], ha="center", va="center", color="c", weight='bold') #  + '\n' + str(j) + ',' + str(i)
+            # if j == 3 and i == 0:
+            #     ax.text(j*2 + 1, i*2 + 1, directions[len(reward) - 1 - i, j][0] + '\n' + str(j) + ',' + str(i), ha="center", va="center", color="g", weight='bold')
 
     plt.show()
-
-    # fig, ax = plt.subplots()
-    # im = plt.grid(color='black', ax=ax, linestyle='-', linewidth=1)
-    # xdata, ydata = [i for i in range(0, len(reward))], [i for i in range(0, len(reward[0]))]
 
 
 def calculate_rewards(args_, env, agent_dir=None):
@@ -131,14 +126,12 @@ def calculate_rewards(args_, env, agent_dir=None):
                         if net_reward > max_prob[0]:
                             max_prob[0] = net_reward
                             max_prob[1] = dir_to_symbol[list(agent_directions.keys())[list(agent_directions.values()).index(dir)]]
-
                     else:
                         if reward > max_prob[0]:
                             max_prob[0] = reward
                             # max_prob[1] = agent_directions.get(dir)
                             max_prob[1] = dir_to_symbol[list(agent_directions.keys())[list(agent_directions.values()).index(dir)]]
 
-                            # TODO fix
                     # print('max prob : ', str(x), ' ', str(y), max_prob[1])
                 net_rewards_row.append(round(max_prob[0], 2))
                 net_rewards_row_dir.append(max_prob[1])
@@ -160,14 +153,13 @@ def calculate_rewards(args_, env, agent_dir=None):
 
 def draw_heatmap(reward, directions):
     fig, ax = plt.subplots()
-
     # reward = np.array([[-0.2, 0.39, 1.07, 1.59], [-0.71, -0.51, -0.1, 0.13], [-1.17, -1.27, -1.15, -1.16], [-1.63, -2.1, -2.29, -2.38]])
     im = heatmap(reward, ax=ax, cmap="YlGn", cbarlabel="reward")
 
     for i in range(len(reward)):
         for j in range(len(reward[0])):
             # text = ax.text(j, i, str(round(reward[i, j], 2)) + str('\n') + directions[i, j][0], ha="center", va="center", color="b")
-            text = ax.text(j, i, directions[i, j][0], ha="center", va="center", color="c", weight='bold')
+            text = ax.text(j, i, directions[i, j][0], ha="center", va="center", color="c", weight='bold') #  + '\n' + str(j) + ',' + str(i)
 
     fig.tight_layout()
     plt.show(block=True)
@@ -177,7 +169,6 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("-b", "--backend", help="Backend to use. Default: qt", default='qt', choices=['qt', 'plt'])
     parser.add_argument("-e", "--env", help="Gym environment to load. Default: MiniGrid-Empty-6x6-v0", default='MiniGrid-Empty-6x6-v0', choices=get_all_environments())
-    # parser.add_argument("-d", "--figures_dir", help="Directory where to save figures. Default: figures aren't saved", default=None)
     parser.add_argument("-p", "--policy_net", help="Policy net to use as agent. Default: no policy_net, the game is the user", default=None)
     parser.add_argument("-r", "--reward_net", help="Reward net to evalute. Default: None", default=None)
 
@@ -187,60 +178,12 @@ if __name__ == "__main__":
 
     agent_direction = None
     net_rewards, directions = calculate_rewards(args, env, agent_direction)
+
+    # draw heatmap
     draw_heatmap(net_rewards, directions)
-    # draw_grid(net_rewards)
 
-    """ 
-    f
-    """
-    # env.agent_pos = (1, 2)
-    # env.agent_dir = 1
-    # action = env.actions.pickup
-    # obs, reward, done, info = env.step(action)
-    # if reward_net is not None:
-    #     net_reward = reward_net(state_filter(obs), torch.tensor([env.step_count])).item()
-    #     print(round(net_reward, 2))
-    #     print(env.__str__())
-    # env.render()
-
-    # fig, ax = plt.subplots()
-    # im, cbar = heatmap(net_rewards, ax=ax, cmap="YlGn", cbarlabel="harvest [t/year]")
-    #
-    # fig.tight_layout()
-    # plt.show()
-
-
-#     if args.agent_view:
-#         env = RGBImgPartialObsWrapper(env)
-#         env = ImgObsWrapper(env)
-#
-#     policy_net = load_net(args.policy_net, True)
-#     reward_net = load_net(args.reward_net, True)
-#
-#     if args.backend == "qt":
-#         app = QApplication(sys.argv)
-#         window = QMainWindow()
-#         central_widget = QWidget()
-#         v_layout = QVBoxLayout(central_widget)
-#         widget_game = QLabel("")
-#         widget_caption = QLabel("")
-#         v_layout.addWidget(widget_game)
-#         v_layout.addWidget(widget_caption)
-#         window.setCentralWidget(central_widget)
-#         redraw = lambda img: (widget_game.setPixmap(nparray_to_qpixmap(img)), widget_caption.setText(env.mission))
-#         game = Game(env, args.seed, args.agent_view, args.games_dir, redraw, lambda:..., True, policy_net, args.max_games, args.waiting_time, reward_net)
-#         window.keyPressEvent = game.qt_key_handler
-#         window.show()
-#         sys.exit(app.exec_())
-#     elif args.backend == "plt":
-#         window = Window('gym_minigrid - ' + args.env)
-#         redraw = lambda img: (window.show_img(img), window.set_caption(env.mission))
-#         game = Game(env, args.seed, args.agent_view, args.games_dir, redraw, lambda:..., True, policy_net, args.max_games, args.waiting_time, reward_net)
-#         window.reg_key_handler(game.plt_key_handler)
-#         # Blocking event loop
-#         window.show(block=True)
-#     else:
-#         print("unknown backend")
+    # draw grid with directions
+    draw_grid(net_rewards, directions)
 
 
 
