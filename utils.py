@@ -22,7 +22,7 @@ def games_dir():
 
 # number of episodes for policy training
 def num_max_episodes():
-    return 5001
+    return 10001
 
 
 # numbers of episodes between each checkpoint
@@ -86,7 +86,7 @@ def print_state(state, flip=True):
 
 
 def get_num_actions(env_name):
-    if 'Empty' in env_name:
+    if 'Empty' in env_name or 'FourRooms' in env_name:
         # print('env_name', env_name, ' ---> 3 ACTIONS')
         return 3
     # print('env_name', env_name, ' ---> 7 ACTIONS')
@@ -198,3 +198,23 @@ class Standardizer:
         self.running_avg = self.mem * self.running_avg + (1-self.mem) * sum(values)/len(values)
         self.running_std = self.mem * self.running_std + (1-self.mem) * np.std(values) + 10 ** -7
         return [(v-self.running_avg)/self.running_std for v in values]
+
+
+class SumStandardizer:
+
+    def __init__(self, history_length):
+        self.history_length = history_length
+        self.history = []
+
+    def standardize(self, values):
+
+        if len(self.history) == 0:  # first time: initialize
+            self.history.append(sum(values))
+            return values
+        if len(self.history) == self.history_length:  # if history is full: remove the oldest
+            self.history.pop(0)
+
+        self.history.append(sum(values))
+        avg = np.mean(self.history)
+        std = np.std(self.history) + 0.1
+        return [(v-(avg/len(values)))/std for v in values]

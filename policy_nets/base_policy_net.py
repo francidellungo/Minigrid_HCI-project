@@ -55,6 +55,7 @@ class PolicyNet(nn.Module):
         self.interrupted = False
         self.running = False
         self.standardizer = Standardizer(0.999)
+        self.sum_standardizer = SumStandardizer(500)
 
     @abstractmethod
     def forward(self, x):
@@ -249,10 +250,12 @@ class PolicyNet(nn.Module):
             #rewards = standardize(rewards)
             #rewards = normalize(rewards)
             #rewards = self.standardizer.standardize(rewards)
+            #rewards = self.sum_standardizer.standardize(rewards)
 
             discounted_rewards = PolicyNet.compute_discounted_rewards(rewards, gamma)
             #discounted_rewards = standardize(PolicyNet.compute_discounted_rewards(rewards, gamma))
             #discounted_rewards = normalize(PolicyNet.compute_discounted_rewards(rewards, gamma))
+            #discounted_rewards = self.sum_standardizer.standardize(discounted_rewards)
 
             return states, actions, true_rewards, rewards, discounted_rewards, step
 
