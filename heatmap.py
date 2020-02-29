@@ -158,7 +158,7 @@ def draw_heatmap(reward, directions):
     plt.tick_params(axis='both', which='major', bottom=False, top=False, left=False, labeltop=False, labelleft=False)
     # for i in range(len(reward)):
     #     for j in range(len(reward[0])):
-    #             text = ax.text(j, i, directions[i, j][0], ha="center", va="center", color="c", weight='bold')
+    #         text = ax.text(j, i, reward[i][j], ha="center", va="center", color="c", weight='bold')
     fig.tight_layout()
     plt.show(block=True)
 
