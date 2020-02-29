@@ -156,12 +156,9 @@ def draw_heatmap(reward, directions):
     im = heatmap(reward, ax=ax, cmap="YlGn", cbarlabel="reward")
 
     plt.tick_params(axis='both', which='major', bottom=False, top=False, left=False, labeltop=False, labelleft=False)
-
-    for i in range(len(reward)):
-        for j in range(len(reward[0])):
-            # text = ax.text(j, i, str(round(reward[i, j], 2)) + str('\n') + directions[i, j][0], ha="center", va="center", color="b")
-            text = ax.text(j, i, directions[i, j][0], ha="center", va="center", color="c", weight='bold') #  + '\n' + str(j) + ',' + str(i)
-
+    # for i in range(len(reward)):
+    #     for j in range(len(reward[0])):
+    #             text = ax.text(j, i, directions[i, j][0], ha="center", va="center", color="c", weight='bold')
     fig.tight_layout()
     plt.show(block=True)
 
@@ -178,13 +175,20 @@ if __name__ == "__main__":
     env = gym.make(args.env)
 
     agent_direction = None
+    # agent_direction = 'down'
+    # agent_direction = 'right'
+    # agent_direction = 'up'
+    # agent_direction = 'left'
+
+    # calculate net reward
     net_rewards, directions = calculate_rewards(args, env, agent_direction)
 
-    # draw heatmap
+    # draw heatmap of max prob in each cell
     draw_heatmap(net_rewards, directions)
 
     # draw grid with directions
-    draw_grid(net_rewards, directions)
+    if not agent_direction:
+        draw_grid(net_rewards, directions)
 
 
 
