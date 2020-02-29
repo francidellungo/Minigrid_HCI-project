@@ -76,14 +76,13 @@ def draw_grid(reward, directions):
 
     # And a corresponding grid
     ax.grid(which='both')
-    plt.tick_params(axis='both', which='major', labelsize=5, bottom=False, left=False, labelbottom=False, labelleft=False)
+    plt.tick_params(axis='both', which='major', bottom=False, left=False, labelbottom=False, labelleft=False)
 
     for i in range(len(reward)):
         for j in range(len(reward[0])):
             text = ax.text(j*2 + 1, i*2 + 1, directions[len(reward) - 1 - i, j][0], ha="center", va="center", color="c", weight='bold') #  + '\n' + str(j) + ',' + str(i)
             # if j == 3 and i == 0:
             #     ax.text(j*2 + 1, i*2 + 1, directions[len(reward) - 1 - i, j][0] + '\n' + str(j) + ',' + str(i), ha="center", va="center", color="g", weight='bold')
-
     plt.show()
 
 
@@ -155,6 +154,8 @@ def draw_heatmap(reward, directions):
     fig, ax = plt.subplots()
     # reward = np.array([[-0.2, 0.39, 1.07, 1.59], [-0.71, -0.51, -0.1, 0.13], [-1.17, -1.27, -1.15, -1.16], [-1.63, -2.1, -2.29, -2.38]])
     im = heatmap(reward, ax=ax, cmap="YlGn", cbarlabel="reward")
+
+    plt.tick_params(axis='both', which='major', bottom=False, top=False, left=False, labeltop=False, labelleft=False)
 
     for i in range(len(reward)):
         for j in range(len(reward[0])):
