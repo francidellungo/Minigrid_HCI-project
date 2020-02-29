@@ -68,6 +68,12 @@ class Game:
         self.env_disc_standardizer = Standardizer(mem)
         self.net_disc_standardizer = Standardizer(mem)
 
+        history_length = 500
+        self.env_sum_standardizer = SumStandardizer(history_length)
+        self.net_sum_standardizer = SumStandardizer(history_length)
+        self.env_disc_sum_standardizer = SumStandardizer(history_length)
+        self.net_disc_sum_standardizer = SumStandardizer(history_length)
+
     def refresh_gui(self, np_array):
         pass
 
@@ -288,6 +294,9 @@ class Game:
         output += "\nenv_standardized_rewards_with_memory: " + str(rounded_list(self.env_standardizer.standardize(self.env_rewards)))
         if self.reward_net is not None:
             output += "\nnet_standardized_rewards_with_memory: " + str(rounded_list(self.net_standardizer.standardize(self.net_rewards)))
+        output += "\nenv_standardized_rewards_sum: " + str(rounded_list(self.env_sum_standardizer.standardize(self.env_rewards)))
+        if self.reward_net is not None:
+            output += "\nnet_standardized_rewards_sum: " + str(rounded_list(self.net_sum_standardizer.standardize(self.net_rewards)))
         print(output)
 
     def print_discounted_rewards(self):
@@ -305,6 +314,9 @@ class Game:
         output += "\nenv_standardized_discounted_rewards_with_memory: " + str(rounded_list(self.env_disc_standardizer.standardize(env_discounted_rewards)))
         if self.reward_net is not None:
             output += "\nnet_standardized_discounted_rewards_with_memory: " + str(rounded_list(self.net_disc_standardizer.standardize(net_discounted_rewards)))
+        output += "\nenv_standardized_discounted_rewards_sum: " + str(rounded_list(self.env_disc_sum_standardizer.standardize(env_discounted_rewards)))
+        if self.reward_net is not None:
+            output += "\nnet_standardized_discounted_rewards_sum: " + str(rounded_list(self.net_disc_sum_standardizer.standardize(net_discounted_rewards)))
         print(output)
 
 
