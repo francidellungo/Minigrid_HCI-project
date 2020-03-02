@@ -101,10 +101,10 @@ def calculate_rewards(args_, env, agent_dir=None):
     }
 
     dir_to_symbol = {
-        'right': '>',
-        'down': 'v',
-        'left': '<',
-        'up': '^'
+        'right': '→',
+        'down': '↓',
+        'left': '←',
+        'up': '↑'
     }
 
     env_width = env.grid.width
