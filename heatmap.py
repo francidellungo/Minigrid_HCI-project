@@ -80,7 +80,7 @@ def draw_grid(reward, directions):
 
     for i in range(len(reward)):
         for j in range(len(reward[0])):
-            text = ax.text(j*2 + 1, i*2 + 1, directions[len(reward) - 1 - i, j][0], ha="center", va="center", color="c", weight='bold') #  + '\n' + str(j) + ',' + str(i)
+            text = ax.text(j*2 + 1, i*2 + 1, directions[len(reward) - 1 - i, j][0], ha="center", va="center", color="b", weight='bold') #  + '\n' + str(j) + ',' + str(i)
             # if j == 3 and i == 0:
             #     ax.text(j*2 + 1, i*2 + 1, directions[len(reward) - 1 - i, j][0] + '\n' + str(j) + ',' + str(i), ha="center", va="center", color="g", weight='bold')
     plt.show()
@@ -189,8 +189,3 @@ if __name__ == "__main__":
     # draw grid with directions
     if not agent_direction:
         draw_grid(net_rewards, directions)
-
-
-
-
-

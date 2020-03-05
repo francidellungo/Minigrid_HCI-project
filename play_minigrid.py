@@ -13,6 +13,7 @@ from termcolor import colored
 import os
 import argparse
 from datetime import datetime
+import collections
 
 import numpy as np
 import gym
@@ -38,6 +39,21 @@ class Game:
         self.autosave = autosave
 
         self.num_games_ended = 0
+
+        self.env_width = env.width - 2
+
+        # create target sequence of action (desired trajectory for the agent)
+        seq = [2 for i in range(self.env_width-1)]
+
+        self.target_traj = [1] + seq + [0] + seq
+        self.target_traj_tt = [0, 0, 0] + seq + [0] + seq
+
+        # self.target_traj = [1, 2, 2, 2, 0, 2, 2, 2]
+        # self.target_traj_tt = [0, 0, 0, 2, 2, 2, 0, 2, 2, 2]
+        self.curr_traj = []
+        self.count_traj = 0
+
+        self.traj_dict = {}
 
         if games_directory is not None:
             self.game_name = None
@@ -134,6 +150,9 @@ class Game:
         return self
 
     def step(self, action):
+        # print('action: ', int(action))
+        self.curr_traj.append(int(action))
+
         if self.num_games_ended == self.max_games:
             return
         obs, reward, done, info = self.env.step(action)
@@ -171,6 +190,21 @@ class Game:
                 self.interrupt()
             else:
                 self.reset()
+
+            # get statistic info
+            if len(self.curr_traj) in self.traj_dict:
+                self.traj_dict[len(self.curr_traj)] += 1
+            else:
+                self.traj_dict[len(self.curr_traj)] = 1
+
+            # print('curr_traj', self.curr_traj, len(self.curr_traj))
+            if self.curr_traj == self.target_traj:
+                self.count_traj += 1
+            self.curr_traj = []
+
+            print('correct trajectories: ', self.count_traj, ' / ', self.max_games, ' = ', self.count_traj/self.max_games * 100, '%')
+            print(self.traj_dict)
+            print(sorted(self.traj_dict.items()))
 
         return self
 
