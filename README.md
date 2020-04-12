@@ -6,6 +6,13 @@ The IRL algorithms are based on the following paper:
 *Extrapolating Beyond Suboptimal Demonstrations via Inverse Reinforcement Learning from Observations*
 https://arxiv.org/pdf/1904.06387.pdf
 
+## Code structure
+
+## MiniGrid environment
+
+[gym-minigrid](https://github.com/maximecb/gym-minigrid) is a minimalistic gridworld package for OpenAI Gym.
+
+
 ## Graphical Application
 ### Initial window
 ### Agents management
@@ -15,6 +22,8 @@ https://arxiv.org/pdf/1904.06387.pdf
 ![](./figures/newAgent.png "Create a new agent")
 
 ### Agent details
+
+## Experiments & results
 
 ## Run the project
 - go to the directory in which you have downloaded the project
