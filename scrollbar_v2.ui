@@ -112,7 +112,7 @@
          </font>
         </property>
         <property name="text">
-         <string>Game list</string>
+         <string>All games</string>
         </property>
        </widget>
       </item>
@@ -126,7 +126,7 @@
          </font>
         </property>
         <property name="text">
-         <string>Game ranking (best to worst)</string>
+         <string>Ranked games (best to worst)</string>
         </property>
        </widget>
       </item>
