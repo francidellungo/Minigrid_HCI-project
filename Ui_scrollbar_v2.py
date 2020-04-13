@@ -2,11 +2,13 @@
 
 # Form implementation generated from reading ui file 'scrollbar_v2.ui'
 #
-# Created by: PyQt5 UI code generator 5.9.2
+# Created by: PyQt5 UI code generator 5.13.2
 #
 # WARNING! All changes made in this file will be lost!
 
+
 from PyQt5 import QtCore, QtGui, QtWidgets
+
 
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
@@ -99,6 +101,5 @@ class Ui_MainWindow(object):
         MainWindow.setWindowTitle(_translate("MainWindow", "MainWindow"))
         self.new_game_pb.setText(_translate("MainWindow", "New game"))
         self.train_pb.setText(_translate("MainWindow", "Train"))
-        self.game_list_title.setText(_translate("MainWindow", "Game list"))
-        self.game_ranking_title.setText(_translate("MainWindow", "Game ranking (best to worst)"))
-
+        self.game_list_title.setText(_translate("MainWindow", "All games"))
+        self.game_ranking_title.setText(_translate("MainWindow", "Ranked games (best to worst)"))

@@ -6,9 +6,6 @@ The IRL algorithms are based on the following paper:
 *Extrapolating Beyond Suboptimal Demonstrations via Inverse Reinforcement Learning from Observations*
 [[1]](#Trex).
 
-
-## Code structure
-
 ## MiniGrid environment
 
 
@@ -17,7 +14,7 @@ Gym-minigrid [[2]](#minigrid) is a minimalistic gridworld package for OpenAI Gym
 There are many different environments, you can see some examples below. 
 
 The red triangle represents the agent that can move within the environment, while
-the green square (if any) represents the goal. 
+the green square (usually) represents the goal. 
 There may also be other objects that the agent can interact with (doors, keys, etc.) each with a different color.
 
 ![Alt Text](./figures/minigrid.png "Minigrid environments")
@@ -26,19 +23,53 @@ There may also be other objects that the agent can interact with (doors, keys, e
 ## Graphical Application
 
 ### Initial window
+Choose an environment to use
+
 ![Alt Text](./figures/envsList.png "Available environments")
 
+
 ### Agents management
+Browse list of created agents
+
 ![Alt Text](./figures/agents.png "All the created agents")
 
+
 ### New agent
+Add demonstrations and create a new agent
+
 ![Alt Text](./figures/newAgent.png "Create a new agent")
 
+
 ### Agent details
+Check trained agent
+
 ![Alt Text](./figures/agentDetail.png "Agent details")
 
+## Neural Networks
+### Reward Neural Network
+Architecture of the Reward Neural Network:
++ input: MiniGrid observation 
++ output: reward
+
+Trained with T-REX loss. [[1]](#Trex)
+
+![Alt Text](./figures/reward_net.png "Architecture of the Reward Neural Network")
+
+### Policy Neural Network
+Architecture of the Policy Neural Network:
++ input: MiniGrid observation
++ output: probability distribution of the actions
+
+Trained with loss:  -log(action_probability) * discounted_reward
+
+![Alt Text](./figures/policy_net.png "Architecture of the Policy Neural Network")
 
 ## Experiments & results
+We made a set of demonstrations to try to get the desired behavior shown on the left in the image below.
+
+Next, the heatmaps of the rewards given by the trained reward network are shown. The different heatmaps represent different directions of the agent, in order: up, right, down, left.
+
+![Alt Text](./figures/experiments.png "Experiments")
 
 ## Run the project
 - go to the directory in which you have downloaded the project
