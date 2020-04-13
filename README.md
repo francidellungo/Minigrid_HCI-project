@@ -7,11 +7,7 @@ The IRL algorithms are based on the following paper:
 [[1]](#Trex).
 
 
-## Code structure
-
 ## MiniGrid environment
-
-
 Gym-minigrid [[2]](#minigrid) is a minimalistic gridworld package for OpenAI Gym.
 
 There are many different environments, you can see some examples below. 
@@ -24,7 +20,9 @@ There may also be other objects that the agent can interact with (doors, keys, e
 
 
 ## Graphical Application
-
+The graphical interface allows the user to create, order and manage a set of games
+n order to create an agent that shows a desired behavior.
+Below you can see the application windows.
 ### Initial window
 ![Alt Text](./figures/envsList.png "Available environments")
 
